@@ -39,18 +39,6 @@ from os import path
 
 import mathutils, math, struct
 
-artistitems = [
-    ('none', 'None', '', 1),
-    ('eibriel', 'Eibriel', '', 2),
-    ('facu', 'Facu', '', 3),
-]
-
-roleitems = [
-    ('none', 'None', '', 1),
-    ('eibriel', 'Eibriel', '', 2),
-    ('facu', 'Facu', '', 3),
-]
-
 libitems = []
 
 class eLibraryGroups(bpy.types.PropertyGroup):
@@ -433,8 +421,11 @@ class refreshLibrary (bpy.types.Operator):
         elib_collection = addon_prefs.elibrary_collection
         #for elib in elib_collection:
         
-        
-        assetlist = os.listdir(elib.folderpath)
+        assetlist = None
+        try:
+            assetlist = os.listdir(elib.folderpath)
+        except:
+            pass
         if assetlist != None:
             assetlist.sort()
             for filename in assetlist:
