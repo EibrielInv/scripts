@@ -163,7 +163,13 @@ class eLinkerPanelLinks(bpy.types.Panel):
         user_preferences = context.user_preferences
         addon_prefs = user_preferences.addons[__name__].preferences
         elib_collection = addon_prefs.elibrary_collection
-        elib = elib_collection[ wm.elibrary_collection_index ]
+        #print ( len (elib_collection) )
+        #print (wm.elibrary_collection_index+1)
+        if len (elib_collection) < wm.elibrary_collection_index+1:
+            wm.elibrary_collection_index = 0
+        #elib = None
+        #if len(elib_collection) > 0:
+        #    elib = elib_collection[ wm.elibrary_collection_index ]
         
         layout = self.layout
         
@@ -179,31 +185,45 @@ class eLinkerPanelLinks(bpy.types.Panel):
         etype = active_obj.get('elinker_type')
         egroup = active_obj.get('elinker_group')
         
-        if not etype:
-            return
-            
-        col.label( text= "Type: %s" % etype )
+        if etype:
+            col.label( text= "Type: %s" % etype )
         #col.label( text= etype )
         
-        if not egroup:
-            return
+        if egroup:
         
-        suffarray = []
-        if elib.lodsuffixes != "":
-            suffarray = elib.lodsuffixes.split(";")
+            suffarray = []
+            
+            elib = None
+            for el in elib_collection:
+                #te = elib_collection[el]
+                if el.name == etype:
+                    elib = el
+            
+            if elib and elib.lodsuffixes != "":
+                suffarray = elib.lodsuffixes.split(";")
+            
+            for suff in suffarray:
+                if egroup.endswith(suff):
+                    col.label( text= "LOD suffix: %s" % suff )
+                    #col.label( text= suff )
+            
+            for suff in suffarray:
+                oprops = col.operator(operator="elinker.change_group", text="Change to %s" % suff, icon="TRIA_RIGHT")
+                oprops.suffix = suff
+            
+
+            layout.separator()
+            col = layout.column(align=0)
+            
+            col.prop(context.scene, "elinker_cachepath")
+            col.operator("elinker.gen_cache", icon="MOD_MESHDEFORM")
         
-        for suff in suffarray:
-            if egroup.endswith(suff):
-                col.label( text= "LOD suffix: %s" % suff )
-                #col.label( text= suff )
+        layout.separator()
+        col = layout.column(align=0)
         
-        for suff in suffarray:
-            oprops = col.operator(operator="elinker.change_group", text="Change to %s" % suff, icon="TRIA_RIGHT")
-            oprops.suffix = suff
+        col.operator("elinker.meshcache2shapekeys", icon="KEYINGSET")
+        col.operator("elinker.clearanimshapeskey", icon="KEY_DEHLT")
         
-        #TODO
-        #col.prop(context.scene, "elinker_cachepath")
-        #col.operator("elinker.gen_cache")
 
 class changeGroup (bpy.types.Operator):
     bl_idname = "elinker.change_group"
@@ -248,7 +268,7 @@ class changeGroup (bpy.types.Operator):
         libfile = obj['elinker_file']
         libfile = libfile.replace('\\','/')
         libfile = os.path.abspath(os.path.normpath(bpy.path.abspath(libfile)))
-        print (libfile)
+        #print (libfile)
         
         if not os.path.exists(libfile):
             self.report( {'ERROR'}, "File do not exist: \"%s\"" % libfile)
@@ -396,16 +416,23 @@ class refreshLibrary (bpy.types.Operator):
         user_preferences = context.user_preferences
         addon_prefs = user_preferences.addons[__name__].preferences
         elib_collection = addon_prefs.elibrary_collection
-        elib = elib_collection[ wm.elibrary_collection_index ]
         
-        elib_collection = addon_prefs.elibrary_collection
-        #for elib in elib_collection:
         print ("Refreshing")
         
         wm.elib_libs.clear()
         wm.elib_libs_index = 0
         wm.elib_groups.clear()
         wm.elib_groups_index = 0
+        
+        if len(elib_collection) ==0:
+            self.report( {'WARNING'}, "No library configured" )
+            return {'CANCELLED'}
+        
+        elib = elib_collection[ wm.elibrary_collection_index ]
+        
+        elib_collection = addon_prefs.elibrary_collection
+        #for elib in elib_collection:
+        
         
         assetlist = os.listdir(elib.folderpath)
         if assetlist != None:
@@ -811,7 +838,7 @@ class genCache (bpy.types.Operator):
                 
                 
             sc.objects.link(newob)	
-            mod = newob.modifiers.new('Mesh Cache', 'MESH_CACHE')
+            mod = newob.modifiers.new('eLinker Mesh Cache', 'MESH_CACHE')
             mod.cache_format = 'PC2'
             mod.filepath = filepath_temp
             mod.frame_start = start
@@ -832,6 +859,127 @@ class genCache (bpy.types.Operator):
                    for x in range(int((end - start) / sampling) + 1)]
         return samples
 
+class cache2shapekeys (bpy.types.Operator):
+    """Bake Mesh Cache to ShapeKeys"""
+    bl_idname = "elinker.meshcache2shapekeys"
+    bl_label = "Mesh Cache to Shape Keys"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self,context):
+        C = context
+        obj = context.active_object
+
+        if not context.active_object or context.active_object.type!="MESH":
+            self.report( {'ERROR'}, "No active object" )
+            return {'CANCELLED'}
+
+        modcachename = "eLinker Mesh Cache"
+
+        try:
+            obj.modifiers[ modcachename ]
+        except:
+            self.report( {'ERROR'}, "The object must have a Mesh Cache modifier" )
+            return {'CANCELLED'}
+
+        obj.modifiers[ modcachename ].show_viewport = False
+        obj.modifiers[ modcachename ].show_render = False
+        fil = obj.modifiers[ modcachename ].filepath
+
+        obj.use_shape_key_edit_mode = True
+
+        for n in range (bpy.context.scene.frame_start-2,bpy.context.scene.frame_end+1+1):
+            bpy.context.scene.frame_current = n
+            nam = "CacheAnim_%s" % n
+            
+            ks = None
+            try:
+                ks = obj.data.shape_keys.key_blocks[ nam ]
+            except:
+                pass
+            
+            if ks:
+                kind = None
+                for kkb, kb in enumerate(obj.data.shape_keys.key_blocks):
+                    if kb == ks:
+                        kind = kkb
+                        break
+                        
+                obj.active_shape_key_index = kind
+                bpy.ops.object.shape_key_remove(all=False)
+            
+            C.active_object.modifiers.new(name=nam, type="MESH_CACHE")
+            obj.modifiers[nam].filepath = fil
+            obj.modifiers[nam].cache_format = 'PC2'
+            obj.modifiers[nam].frame_start = bpy.context.scene.frame_start-2
+
+            override = C.copy()
+            override['modifier'] = obj.modifiers[ nam ]
+            bpy.ops.object.modifier_apply(override, apply_as='SHAPE', modifier=nam)
+            obj.data.shape_keys.key_blocks[ nam ].value = 1
+            
+
+            if not obj.data.shape_keys.animation_data:
+                obj.data.shape_keys.animation_data_create()
+
+            if not obj.data.shape_keys.animation_data.action:
+                act = bpy.data.actions.new("%s_animkeys" % obj.name)
+                obj.data.shape_keys.animation_data_create()
+                obj.data.shape_keys.animation_data.action = act
+
+            datapath = 'key_blocks["%s"].value' % nam
+
+            try:
+                obj.data.shape_keys.animation_data.action.fcurves.new(data_path= datapath)
+            except:
+                for curv in obj.data.shape_keys.animation_data.action.fcurves:
+                    if curv.data_path == datapath:
+                        obj.data.shape_keys.animation_data.action.fcurves.remove(fcurve = curv)
+                        
+                obj.data.shape_keys.animation_data.action.fcurves.new(data_path= datapath)
+                pass
+
+            for curv in obj.data.shape_keys.animation_data.action.fcurves:
+                if curv.data_path == datapath:
+                    curv.keyframe_points.insert( n-1, 0, options={'NEEDED','FAST'}) #PREV
+                    curv.keyframe_points.insert( n, 1, options={'NEEDED','FAST'}) #ACTUAL
+                    curv.keyframe_points.insert( n+1, 0, options={'NEEDED','FAST'}) #SIG
+
+        return {'FINISHED'}
+
+
+class clearanimkeyshapes (bpy.types.Operator):
+    """Delete Mesh Cache bake from Shapekeys"""
+    bl_idname = "elinker.clearanimshapeskey"
+    bl_label = "Clear Mesh Cache Shape Keys"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self,context):
+        C = context
+        obj = context.active_object
+        
+        modcachename = "eLinker Mesh Cache"
+        
+        try:
+            obj.modifiers[ modcachename ]
+        except:
+            self.report( {'ERROR'}, "The object must have a Mesh Cache modifier" )
+            return {'CANCELLED'}
+        
+        obj.modifiers[ modcachename ].show_viewport = True
+        obj.modifiers[ modcachename ].show_render = True
+        obj.modifiers[ modcachename ].deform_mode = 'INTEGRATE'
+        
+        for tmpn in range(0, len(obj.data.shape_keys.key_blocks) ):
+            kind = None
+            for kkb, kb in enumerate(obj.data.shape_keys.key_blocks):
+                if kb.name[:10] == "CacheAnim_":
+                    kind = kkb
+                    break
+            if kind:
+                obj.active_shape_key_index = kind
+                bpy.ops.object.shape_key_remove(all=False)
+
+        return {'FINISHED'}
 
 def register():
     bpy.utils.register_class(eLinkerPanelLibrary)
