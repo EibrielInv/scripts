@@ -74,7 +74,19 @@ class eLinkerPreferences(AddonPreferences):
             context.window_manager.elibrary_collection_index = 0"""
           
         layout = self.layout
-        layout.template_list("UI_UL_list", "ui_lib_list_prop", self, "elibrary_collection", context.window_manager, "elibrary_collection_index", rows=5)
+        
+        row = layout.row()
+        col = row.column()
+        col.template_list("UI_UL_list", "ui_lib_list_prop", self, "elibrary_collection", context.window_manager, "elibrary_collection_index", rows=5)
+        col = row.column(align=True)
+        col.operator("elinker.add_library", icon="ZOOMIN", text="")
+        col.operator("elinker.remove_library", icon="ZOOMOUT", text="")
+        
+        #col = row.column(align=True)
+        #col.operator("object.vertex_group_add", icon='ZOOMIN', text="")
+        #col.operator("object.vertex_group_remove", icon='ZOOMOUT', text="").all = False
+        
+        
         
         if len(self.elibrary_collection) > 0:
             col = self.elibrary_collection[ context.window_manager.elibrary_collection_index ]
@@ -82,9 +94,12 @@ class eLinkerPreferences(AddonPreferences):
             layout.prop(col, "name")
             layout.prop(col, "folderpath")
             layout.prop(col, "lodsuffixes")
-        layout.operator("elinker.add_library", icon="ZOOMIN")
-        layout.operator("elinker.load_preferences", icon="FILE_TICK")
-        layout.operator("elinker.save_preferences", icon="FILE_FOLDER")
+        
+        layout.separator()
+        
+        row = layout.row(align=1)
+        row.operator("elinker.save_preferences", icon="FILE_FOLDER")
+        row.operator("elinker.load_preferences", icon="FILE_TICK")
 
 
 class eLinkerPanelLibrary(bpy.types.Panel):
@@ -96,46 +111,28 @@ class eLinkerPanelLibrary(bpy.types.Panel):
     
     def draw(self, context):
         active_obj = context.active_object
-        #scnsettings = context.wm.elibrary_properties
+
         user_preferences = context.user_preferences
         addon_prefs = user_preferences.addons[__name__].preferences
         wm = context.window_manager
         layout = self.layout
+        
         col = layout.column()
-        
-        col.operator("elinker.refresh_libraries", icon="FILE_REFRESH")
-        
-        
-        
+        col.operator("elinker.refresh_libraries", icon="FILE_REFRESH", text="")
         col.template_list("UI_UL_list", "ui_lib_list", addon_prefs, "elibrary_collection", wm, "elibrary_collection_index", rows=len(addon_prefs.elibrary_collection), type="DEFAULT")
 
-        if len( wm.elib_libs ) > 0:
-                row = col.row(align=1)
-                row.operator("elinker.load_library", icon="BLENDER")
-                colb = row.column()
-                colb.label( text= wm.elib_libs[ wm.elib_libs_index ].name )
-                
-        
-        if len( wm.elib_groups ) > 0:
-                row = col.row(align=1)
-                row.operator("elinker.link_group", icon="LINK_BLEND")
-                colb = row.column()
-                colb.label( text= wm.elib_groups[ wm.elib_groups_index ].name )
-                
-                
         row = col.row(align=1)
-        
-        if len(wm.elib_libs) > 0:
-            #curr_lib = addon_prefs.elibrary_collection[wm.elibrary_collection_index]
-            row.template_list("UI_UL_list", "ui_library_list", wm, "elib_libs", wm, "elib_libs_index", rows=5)
-            
-            
-            colb = row.column()
-            
-            #curr_group = addon_prefs.elibrary_collection[wm.elib_libs_index]
-            colb.template_list("UI_UL_list", "ui_group_list", wm, "elib_groups", wm, "elib_groups_index", rows=5)
-            
-        
+        coll = row.column()
+        if not len( wm.elib_libs ) > 0:
+            coll.enabled = False
+        coll.operator("elinker.load_library", icon="LINK_BLEND")
+        coll.template_list("UI_UL_list", "ui_library_list", wm, "elib_libs", wm, "elib_libs_index", rows=5)
+
+        colb = row.column()
+        if not len( wm.elib_groups ) > 0:
+            colb.enabled = False
+        colb.operator("elinker.link_group", icon="GROUP")
+        colb.template_list("UI_UL_list", "ui_group_list", wm, "elib_groups", wm, "elib_groups_index", rows=5)
         
 
 class eLinkerPanelLinks(bpy.types.Panel):
@@ -208,9 +205,9 @@ class eLinkerPanelLinks(bpy.types.Panel):
         
         layout.separator()
         col = layout.column(align=0)
-        
-        col.operator("elinker.meshcache2shapekeys", icon="KEYINGSET")
-        col.operator("elinker.clearanimshapeskey", icon="KEY_DEHLT")
+        row = col.row(align=1)
+        row.operator("elinker.meshcache2shapekeys", icon="KEYINGSET")
+        row.operator("elinker.clearanimshapeskey", icon="KEY_DEHLT")
         
 
 class changeGroup (bpy.types.Operator):
@@ -393,6 +390,24 @@ class addLibrary (bpy.types.Operator):
         
         return {'FINISHED'}
 
+
+
+class removeLibrary (bpy.types.Operator):
+    bl_idname = "elinker.remove_library"
+    bl_label = "Remove Library"
+    
+    def execute(self,context):
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__name__].preferences
+        wm = context.window_manager
+        
+        elib_collection = addon_prefs.elibrary_collection
+        elib_collection.remove(wm.elibrary_collection_index)
+        wm.elibrary_collection_index = len(addon_prefs.elibrary_collection)-1
+        
+        return {'FINISHED'}
+        
+        
 class refreshLibrary (bpy.types.Operator):
     bl_idname = "elinker.refresh_libraries"
     bl_label = "Refresh Libraries"
@@ -438,7 +453,7 @@ class refreshLibrary (bpy.types.Operator):
 
 class loadLibraries (bpy.types.Operator):
     bl_idname = "elinker.load_library"
-    bl_label = "Load Library"
+    bl_label = "Load Blend"
     #bl_options = {"REGISTER", "UNDO"}
     def execute(self,context):
         #scnsettings = context.scene.movietools
@@ -648,7 +663,7 @@ class linkGroup (bpy.types.Operator):
 ##---------------------------GEN CACHE------------------
 class genCache (bpy.types.Operator):
     bl_idname = "elinker.gen_cache"
-    bl_label = "Gen Cache"
+    bl_label = "Build Cache"
 
     filename_ext = ".pc2"
 
@@ -853,7 +868,7 @@ class genCache (bpy.types.Operator):
 class cache2shapekeys (bpy.types.Operator):
     """Bake Mesh Cache to ShapeKeys"""
     bl_idname = "elinker.meshcache2shapekeys"
-    bl_label = "Mesh Cache to Shape Keys"
+    bl_label = "Shape Key sequence"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self,context):
@@ -941,7 +956,7 @@ class cache2shapekeys (bpy.types.Operator):
 class clearanimkeyshapes (bpy.types.Operator):
     """Delete Mesh Cache bake from Shapekeys"""
     bl_idname = "elinker.clearanimshapeskey"
-    bl_label = "Clear Mesh Cache Shape Keys"
+    bl_label = "Clear Shape Keys"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self,context):
