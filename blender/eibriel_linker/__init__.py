@@ -540,11 +540,17 @@ class linkGroup (bpy.types.Operator):
         elib = elib_collection[ wm.elibrary_collection_index ]
         elibname = elib.name
         
+        appok = False
         with bpy.data.libraries.load(libfile, link=True) as (data_from, data_to):
             for grr in data_from.groups:
                 if grr == gr:
                     data_to.groups.append(grr)
-        
+                    appok = True
+                    
+        if not appok:
+            self.report( {'ERROR'}, "Group not found" )
+            return {'CANCELLED'}
+            
         suffarray = []
         if elib.lodsuffixes != "":
             suffarray = elib.lodsuffixes.split(";")
@@ -677,7 +683,7 @@ class genCache (bpy.types.Operator):
             if ( not ob.type in {'MESH'} ):
                 continue
                 
-            usemask = False
+            usemask = []
             usemirror = False
             
             for modd in ob.modifiers:
@@ -686,7 +692,7 @@ class genCache (bpy.types.Operator):
             for modd in ob.modifiers:
                 if modd.type == 'MASK':
                     modd.show_render = False
-                    usemask = True
+                    usemask.append( {'vertex_group' : modd.vertex_group, 'invert_vertex_group':modd.invert_vertex_group} )
                     self.report( {'WARNING'}, "Mask modifier on Object \"%s\", unexpected results" % ob.name )
             for modd in ob.modifiers:
                 if modd.type == 'MIRROR':
@@ -710,19 +716,19 @@ class genCache (bpy.types.Operator):
                 
             objects[ob.name] = {}
             objects[ob.name]['object'] = ob
-                    
+
             count = count + 1
             me = ob.to_mesh(sc, apply_modifiers, 'RENDER')
             vertCount = len(me.vertices)
             objects[ob.name]['vertCount'] = vertCount
             sampletimes = self.getSampling(start, end, sampling)
             sampleCount = len(sampletimes)
-            
+
             # Create the header
             headerFormat='<12siiffi'
             headerStr = struct.pack(headerFormat, b'POINTCACHE2\0',
                                     1, vertCount, start, sampling, sampleCount)
-            
+
             tail = "%s_%s.ps2" % (filepath, ob.name)
             filepath_temp = path.join(scn.elinker_cachepath, tail)
 
@@ -801,17 +807,27 @@ class genCache (bpy.types.Operator):
                         skey.mute = True
                         
                 newob = bpy.data.objects.new( ob.name, newme )   
-                
-            sc.objects.link(newob)	
+            
+            newob['elinker_parent_group'] = gr.get('elinker_group')
+            newob['elinker_parent_type'] = gr.get('elinker_type')
+            
+            sc.objects.link(newob)
             mod = newob.modifiers.new('eLinker Mesh Cache', 'MESH_CACHE')
             mod.cache_format = 'PC2'
             mod.filepath = filepath_temp
             mod.frame_start = start
              
-            if usemask:
-                mod = newob.modifiers.new('Mask', 'MASK')
+            for mm in usemask:
+                mod = newob.modifiers.new('eLinker Mask', 'MASK')
+                newob.vertex_groups.new(mm['vertex_group'])
+                mod.vertex_group = mm['vertex_group']
+                mod.invert_vertex_group = mm['invert_vertex_group']
+                overt = ob.data.vertices
+                for v,k in overt.items():
+                    if overt[v].groups.get(mm['vertex_group']):
+                        newob.data.vertices[k].groups[mm['vertex_group']] = overt[v].groups[mm['vertex_group']]
             
-            mod = newob.modifiers.new('Subsurf', 'SUBSURF')
+            mod = newob.modifiers.new('eLinker Subsurf', 'SUBSURF')
             
             del newob
             del mod
