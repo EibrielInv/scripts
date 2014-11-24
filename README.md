@@ -2,6 +2,8 @@
 
 A series of Scripts for a variety of software focused on CG Animation and VFX workflow.
 
+![eLinker](doc/blender/img/elinker_cover.png "eLinker")
+
 ##Blender
 
 ###eLinker Addon
@@ -11,6 +13,8 @@ A series of Scripts for a variety of software focused on CG Animation and VFX wo
 Linking elements to an scene was a tedious process, until now!
 
 eLinker helps to link character, props and more to your scene, with just a few clicks, without browsing files. You can also switch between High and Low resolution models after you link them, and while you animate. When you are done with animation you can bake it to a Mesh Cache, and apply skin fixing, shading, etc..
+
+![eLinker](doc/blender/img/GifeLinker_optimizado.gif "eLinker")
 
 ####Designed for studios, build for everyone!
 
