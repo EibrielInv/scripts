@@ -53,7 +53,12 @@ def refreshLibrariesCallback(prop, context):
     bpy.ops.elinker.refresh_libraries()
 
 def refreshGroupsCallback(prop, context):
-    bpy.ops.elinker.load_library()
+    #TODO Blender warning on startup
+    try:
+        bpy.ops.elinker.load_library()
+    except:
+        pass
+
 
 def uniquename(prop, context, name):
     user_preferences = context.user_preferences
