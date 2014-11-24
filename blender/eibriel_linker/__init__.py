@@ -692,7 +692,7 @@ class genCache (bpy.types.Operator):
             for modd in ob.modifiers:
                 if modd.type == 'MASK':
                     modd.show_render = False
-                    usemask.append( {'vertex_group' : modd.vertex_group, 'invert_vertex_group':modd.invert_vertex_group} )
+                    usemask.append( {'name':modd.name, 'vertex_group':modd.vertex_group, 'invert_vertex_group':modd.invert_vertex_group, 'show_render':[], 'show_viewport':[]} )
                     self.report( {'WARNING'}, "Mask modifier on Object \"%s\", unexpected results" % ob.name )
             for modd in ob.modifiers:
                 if modd.type == 'MIRROR':
@@ -753,6 +753,13 @@ class genCache (bpy.types.Operator):
                 obinfo = objects[ob.name]
                     
                 sc.frame_set(frame)
+                for mm in usemask:
+                    mmod = ob.modifiers[ mm['name'] ]
+                    mm['show_render'].append(mmod.show_render)
+                    mm['show_viewport'].append(mmod.show_viewport)
+                    mmod.show_render = False
+                    mmod.show_viewport = False
+                    
                 per = float(frame-start)/float(end-start)
                 perb = (count / len(objects))*0.01
                 per += perb
@@ -818,7 +825,7 @@ class genCache (bpy.types.Operator):
             mod.frame_start = start
              
             for mm in usemask:
-                mod = newob.modifiers.new('eLinker Mask', 'MASK')
+                mod = newob.modifiers.new(mm['name'], 'MASK')
                 newob.vertex_groups.new(mm['vertex_group'])
                 mod.vertex_group = mm['vertex_group']
                 mod.invert_vertex_group = mm['invert_vertex_group']
@@ -826,8 +833,53 @@ class genCache (bpy.types.Operator):
                 for v,k in overt.items():
                     if overt[v].groups.get(mm['vertex_group']):
                         newob.data.vertices[k].groups[mm['vertex_group']] = overt[v].groups[mm['vertex_group']]
+                
+                if not newob.animation_data:
+                    newob.animation_data_create()
+
+                if not newob.animation_data.action:
+                    act = bpy.data.actions.new("%s_action" % newob.name)
+                    newob.animation_data_create()
+                    newob.animation_data.action = act
+                
+                ofc = newob.animation_data.action.fcurves
+                svname = 'modifiers["%s"].show_viewport' % mm['name']
+                srname = 'modifiers["%s"].show_render' % mm['name']
+                svffc = None
+                srffc = None
+                for fc in ofc:
+                    if svname == fc.data_path:
+                        svffc = fc
+                    if srname == fc.data_path:
+                        srffc = fc
+                        
+                if svffc == None:
+                    ofc.new ( svname )
+                    svffc = ofc[-1]
+
+                if srffc == None:
+                    ofc.new ( srname )
+                    srffc = ofc[-1]
+
+                #tmpind = ind
+                #if tmpind[:1] != '[':
+                #    tmpind = ".%s" % tmpind
+                #print ( eval("obj%s" % tmpind) )
+                fc = 0
+                for frame in sampletimes:
+                    svffc.keyframe_points.insert(frame=frame, value = mm['show_viewport'][fc])
+                    srffc.keyframe_points.insert(frame=frame, value = mm['show_render'][fc])
+                    fc += 1
             
             mod = newob.modifiers.new('eLinker Subsurf', 'SUBSURF')
+            
+            context.scene.objects.active = newob
+            
+            if len(ob.particle_systems)>0:
+                for ps in ob.particle_systems:
+                    bpy.ops.object.particle_system_add()
+                    nps = newob.particle_systems[-1]
+                    nps.settings = ps.settings
             
             del newob
             del mod
@@ -975,6 +1027,13 @@ def register():
     bpy.types.WindowManager.elib_groups_index = IntProperty(options={'HIDDEN', 'SKIP_SAVE'})
     
     bpy.types.Scene.elinker_cachepath = StringProperty(name="Cache Path", default="", subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    
+    wm = bpy.context.window_manager
+    
+    wm.elib_libs.clear()
+    wm.elib_libs_index = 0
+    wm.elib_groups.clear()
+    wm.elib_groups_index = 0
     
 
 def unregister():
