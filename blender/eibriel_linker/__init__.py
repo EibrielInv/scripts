@@ -24,7 +24,7 @@ bl_info = {
     "version": (0,1),
     "blender": (2, 72, 0),
     "location": "View3D > Tools > Relations",
-    "description": "Tools for film production.",
+    "description": "Link groups with two clicks",
     "warning": "",
     "wiki_url": "https://github.com/Eibriel/scripts/wiki",
     "tracker_url": "https://github.com/Eibriel/scripts/issues",
@@ -464,9 +464,12 @@ class refreshLibrary (bpy.types.Operator):
         
         elib_collection = addon_prefs.elibrary_collection
         
+        if bpy.data.filepath=='':
+            return {'FINISHED'}
+        
         assetlist = None
         try:
-            assetlist = os.listdir(elib.folderpath)
+            assetlist = os.listdir( bpy.path.abspath(elib.folderpath) )
         except:
             pass
         if assetlist != None:
