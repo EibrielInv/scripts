@@ -82,6 +82,14 @@ def checkNamesCallback(prop, context):
     if initval != newname:
         prop.name = newname
         
+def fixpath(filepath):
+    #print ("A: %s" % filepath)
+    filepath = bpy.path.abspath( filepath )
+    filepath = filepath.replace('\\','/')
+    filepath = path.normpath( filepath )
+    #print ("B: %s" % filepath)
+    return filepath
+        
 class eLibraryProperties(bpy.types.PropertyGroup):
     folderpath = StringProperty(name="Library folder", default="", subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'}, update=refreshLibrariesCallback)
     name = StringProperty(name="Name", default="", options={'HIDDEN', 'SKIP_SAVE'}, update=checkNamesCallback)
@@ -277,9 +285,7 @@ class changeGroup (bpy.types.Operator):
             return {'CANCELLED'}
                 
         
-        libfile = obj['elinker_file']
-        libfile = libfile.replace('\\','/')
-        libfile = os.path.abspath(os.path.normpath(bpy.path.abspath(libfile)))
+        libfile = fixpath ( obj['elinker_file'] )
         
         if not os.path.exists(libfile):
             self.report( {'ERROR'}, "File do not exist: \"%s\"" % libfile)
@@ -468,8 +474,10 @@ class refreshLibrary (bpy.types.Operator):
             return {'FINISHED'}
         
         assetlist = None
+        
+        folderpath = fixpath( elib.folderpath )
         try:
-            assetlist = os.listdir( bpy.path.abspath(elib.folderpath) )
+            assetlist = os.listdir( folderpath )
         except:
             pass
         if assetlist != None:
@@ -549,7 +557,7 @@ class linkGroup (bpy.types.Operator):
         elibname = elib.name
         
         appok = False
-        with bpy.data.libraries.load(libfile, link=True) as (data_from, data_to):
+        with bpy.data.libraries.load( fixpath(libfile), link=True) as (data_from, data_to):
             for grr in data_from.groups:
                 if grr == gr:
                     data_to.groups.append(grr)
@@ -674,7 +682,8 @@ class genCache (bpy.types.Operator):
         count = 0
         objects = {}
 
-        abspath = bpy.path.abspath(scn.elinker_cachepath)
+        abspath = fixpath(scn.elinker_cachepath)
+        
         filepath = path.join(abspath, context.active_object.name)
         
         if not gr:
@@ -738,7 +747,7 @@ class genCache (bpy.types.Operator):
                                     1, vertCount, start, sampling, sampleCount)
 
             tail = "%s_%s.ps2" % (filepath, ob.name)
-            filepath_temp = path.join(scn.elinker_cachepath, tail)
+            filepath_temp = path.join( fixpath(scn.elinker_cachepath), tail)
 
             if not path.exists(scn.elinker_cachepath):
                 try:
@@ -792,10 +801,11 @@ class genCache (bpy.types.Operator):
                 
                 me.transform(ob.matrix_world)
                 
+                fpath = fixpath(obinfo['filepath'])
                 try:
-                    f = open(obinfo['filepath'], "ab")
+                    f = open( fpath, "ab")
                 except:
-                    self.report( {'ERROR'}, "Can not open file: \"%s\"" % (obinfo['filepath']) )
+                    self.report( {'ERROR'}, "Can not open file: \"%s\"" % (fpath) )
                     return {'CANCELLED'}
                 
                 for v in me.vertices:
