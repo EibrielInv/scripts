@@ -37,10 +37,10 @@ class eibrielSnap (bpy.types.Operator):
     bl_label = "eSnap"
     bl_options = {"REGISTER", "UNDO"}
     
+    invert = bpy.props.BoolProperty(name="Invert", default=False)
+    
     @classmethod
     def poll(cls, context):
-        for ob in context.selected_objects:
-            print ("%s %s %s" % (ob.name, ob.type, ob.mode) )
         epoll = True
         
         if len(context.selected_objects)==1 and context.selected_objects[0].type=="ARMATURE":
@@ -77,17 +77,26 @@ class eibrielSnap (bpy.types.Operator):
             self.report( {'ERROR'}, "Exactly 2 objets selected are needed" )
             return {'CANCELLED'}
         
+        object_a = context.active_object
+        object_b = object_a
+        for ao in context.selected_objects:
+            if ao != object_a:
+                object_b = ao
+                break
+        
+        if self.invert:
+            tmp = object_a
+            object_a = object_b
+            object_b = tmp
+        
         bone_to = None
-        object_to = context.active_object
+        object_to = object_a
         if object_to.type == 'ARMATURE' and object_to.mode == 'POSE':
             bone_to = object_to.pose.bones[ object_to.data.bones.active.name ]
         
         bone_from = None
         if len(context.selected_objects) > 1:
-            for ao in context.selected_objects:
-                if ao != object_to:
-                    object_from = ao
-                    break
+            object_from = object_b
             if object_from.type == 'ARMATURE' and object_from.mode == 'POSE':
                 bone_from = object_from.pose.bones[ object_from.data.bones.active.name ]
         elif object_to.type == 'ARMATURE':
@@ -100,6 +109,11 @@ class eibrielSnap (bpy.types.Operator):
         else:
             self.report( {'ERROR'}, "Exactly 2 bones selected are needed" )
             return {'CANCELLED'}
+        
+        if object_b == object_a and self.invert:
+            tmp = bone_from
+            bone_from = bone_to
+            bone_to = tmp
         
         if bone_to != None:
             matrix_to = object_to.matrix_world * bone_to.matrix
@@ -117,11 +131,26 @@ class eibrielSnap (bpy.types.Operator):
 def button_esnap(self, context):
     self.layout.operator("esnap.snap")
 
+addon_keymaps = []
+
 def register():
     bpy.types.VIEW3D_MT_object_specials.append(button_esnap)
     bpy.types.VIEW3D_MT_armature_specials.append(button_esnap)
     bpy.types.VIEW3D_MT_pose_specials.append(button_esnap)
     bpy.utils.register_module(__name__)
+    
+    # handle the keymap
+    wm = bpy.context.window_manager
+    
+    km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
+    kmi = km.keymap_items.new(eibrielSnap.bl_idname, 'S', 'PRESS', ctrl=True, oskey=True)
+    kmi.properties.invert=False
+    addon_keymaps.append((km, kmi))
+    
+    km = wm.keyconfigs.addon.keymaps.new(name='Pose', space_type='EMPTY')
+    kmi = km.keymap_items.new(eibrielSnap.bl_idname, 'S', 'PRESS', ctrl=True, oskey=True)
+    kmi.properties.invert=False
+    addon_keymaps.append((km, kmi))
     
 
 def unregister():
@@ -129,6 +158,11 @@ def unregister():
     bpy.types.VIEW3D_MT_armature_specials.remove(button_esnap)
     bpy.types.VIEW3D_MT_pose_specials.remove(button_esnap)
     bpy.utils.unregister_module(__name__)
+    
+    # handle the keymap
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
     
 if __name__ == "__main__":
     register()
