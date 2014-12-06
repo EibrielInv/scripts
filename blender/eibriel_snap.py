@@ -21,7 +21,7 @@ bl_info = {
     "author": "Eibriel",
     "version": (0,1),
     "blender": (2, 72, 0),
-    "location": "View3D > Specials",
+    "location": "View3D > Snap (Shift+S)",
     "description": "Snap location, rotation and scale",
     "warning": "",
     "wiki_url": "https://github.com/Eibriel/scripts/wiki",
@@ -129,14 +129,16 @@ class eibrielSnap (bpy.types.Operator):
         return {'FINISHED'}
 
 def button_esnap(self, context):
+    self.layout.separator()
     self.layout.operator("esnap.snap")
 
 addon_keymaps = []
 
 def register():
-    bpy.types.VIEW3D_MT_object_specials.append(button_esnap)
-    bpy.types.VIEW3D_MT_armature_specials.append(button_esnap)
-    bpy.types.VIEW3D_MT_pose_specials.append(button_esnap)
+    #bpy.types.VIEW3D_MT_object_specials.append(button_esnap)
+    #bpy.types.VIEW3D_MT_armature_specials.append(button_esnap)
+    #bpy.types.VIEW3D_MT_pose_specials.append(button_esnap)
+    bpy.types.VIEW3D_MT_snap.append(button_esnap)
     bpy.utils.register_module(__name__)
     
     # handle the keymap
@@ -154,9 +156,10 @@ def register():
     
 
 def unregister():
-    bpy.types.VIEW3D_MT_object_specials.remove(button_esnap)
-    bpy.types.VIEW3D_MT_armature_specials.remove(button_esnap)
-    bpy.types.VIEW3D_MT_pose_specials.remove(button_esnap)
+    #bpy.types.VIEW3D_MT_object_specials.remove(button_esnap)
+    #bpy.types.VIEW3D_MT_armature_specials.remove(button_esnap)
+    #bpy.types.VIEW3D_MT_pose_specials.remove(button_esnap)
+    bpy.types.VIEW3D_MT_snap.remove(button_esnap)
     bpy.utils.unregister_module(__name__)
     
     # handle the keymap
