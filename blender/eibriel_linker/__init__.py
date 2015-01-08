@@ -89,12 +89,19 @@ def fixpath(filepath):
     filepath = path.normpath( filepath )
     #print ("B: %s" % filepath)
     return filepath
-        
+
+positions = [
+    ('zero', 'Zero', '', 1),
+    ('cursor', 'Cursor', '', 2),
+    ]
+    
 class eLibraryProperties(bpy.types.PropertyGroup):
     folderpath = StringProperty(name="Library folder", default="", subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'}, update=refreshLibrariesCallback)
     name = StringProperty(name="Name", default="", options={'HIDDEN', 'SKIP_SAVE'}, update=checkNamesCallback)
     project = StringProperty(name="Project", default="main", options={'HIDDEN', 'SKIP_SAVE'})
     lodsuffixes = StringProperty(name="LOD suffixes", default="", options={'HIDDEN', 'SKIP_SAVE'})
+    default_position = EnumProperty(items = positions, name="Default position", description="Default position for linked objects")
+    lock_position = BoolProperty(name="Lock position", description="Lock position for linked objects")
         
 class eLinkerPreferences(AddonPreferences):
     bl_idname = __name__
@@ -130,6 +137,8 @@ class eLinkerPreferences(AddonPreferences):
             layout.prop(col, "name")
             layout.prop(col, "folderpath")
             layout.prop(col, "lodsuffixes")
+            layout.prop(col, "default_position")
+            layout.prop(col, "lock_position")
         
         layout.separator()
         
@@ -341,7 +350,7 @@ class savePref (bpy.types.Operator):
         
         libraries = {}
         for elib in addon_prefs.elibrary_collection:
-            libraries[elib.name] = {'name':elib.name, 'folderpath':elib.folderpath, 'project':elib.project, 'lodsuffixes':elib.lodsuffixes}
+            libraries[elib.name] = {'name':elib.name, 'folderpath':elib.folderpath, 'project':elib.project, 'lodsuffixes':elib.lodsuffixes, 'default_position':elib.default_position, 'lock_position':elib.lock_position}
         
         jdata = {'libraries':libraries}
         
@@ -397,9 +406,18 @@ class loadPref (bpy.types.Operator):
             jjlib = jdata['libraries'][jlib]
             elib_collection = addon_prefs.elibrary_collection
             elib_item = elib_collection.add()
-            elib_item.folderpath = jjlib['folderpath']
-            elib_item.lodsuffixes = jjlib['lodsuffixes']
-            elib_item.name = jjlib['name']
+            elib_item.folderpath = jjlib.get('folderpath')
+            elib_item.lodsuffixes = jjlib.get('lodsuffixes')
+            elib_item.name = jjlib.get('name')
+            if not jjlib.get('default_position'):
+                elib_item.default_position = 'zero'
+            else:
+                elib_item.default_position = jjlib.get('default_position')
+            
+            if not elib_item.lock_position:
+                elib_item.lock_position = True
+            else:
+                elib_item.lock_position = jjlib.get('lock_position')
         
         wm.elibrary_collection_index = 0
         wm.elib_libs_index = 0
@@ -582,9 +600,16 @@ class linkGroup (bpy.types.Operator):
         context.scene.objects.link( empty )
         context.scene.objects.active = empty
 
-        empty.location[0] = 0
-        empty.location[1] = 0
-        empty.location[2] = 0
+        if elib.default_position == 'cursor':
+            curlocat = context.scene.cursor_location
+            empty.location[0] = curlocat[0]
+            empty.location[1] = curlocat[1]
+            empty.location[2] = curlocat[2]
+        else:
+            empty.location[0] = 0
+            empty.location[1] = 0
+            empty.location[2] = 0
+        
         empty.rotation_euler[0] = 0
         empty.rotation_euler[1] = 0
         empty.rotation_euler[2] = 0
@@ -600,15 +625,16 @@ class linkGroup (bpy.types.Operator):
         empty["elinker_file"] = libfile
         empty["elinker_group"] = gr
         
-        empty.lock_location[0] = True
-        empty.lock_location[1] = True
-        empty.lock_location[2] = True
-        empty.lock_rotation[0] = True
-        empty.lock_rotation[1] = True
-        empty.lock_rotation[2] = True
-        empty.lock_scale[0] = True
-        empty.lock_scale[1] = True
-        empty.lock_scale[2] = True
+        if elib.lock_position:
+            empty.lock_location[0] = True
+            empty.lock_location[1] = True
+            empty.lock_location[2] = True
+            empty.lock_rotation[0] = True
+            empty.lock_rotation[1] = True
+            empty.lock_rotation[2] = True
+            empty.lock_scale[0] = True
+            empty.lock_scale[1] = True
+            empty.lock_scale[2] = True
         
         for ob in empty.dupli_group.objects:
             if ob.type=="ARMATURE":
@@ -617,15 +643,16 @@ class linkGroup (bpy.types.Operator):
                 rig = bpy.context.object
                 rig.name = "%s_blenrig" % tmpname.lower()
                 
-                bpy.context.object.lock_location[0] = True
-                bpy.context.object.lock_location[1] = True
-                bpy.context.object.lock_location[2] = True
-                bpy.context.object.lock_rotation[0] = True
-                bpy.context.object.lock_rotation[1] = True
-                bpy.context.object.lock_rotation[2] = True
-                bpy.context.object.lock_scale[0] = True
-                bpy.context.object.lock_scale[1] = True
-                bpy.context.object.lock_scale[2] = True
+                if elib.lock_position:
+                    bpy.context.object.lock_location[0] = True
+                    bpy.context.object.lock_location[1] = True
+                    bpy.context.object.lock_location[2] = True
+                    bpy.context.object.lock_rotation[0] = True
+                    bpy.context.object.lock_rotation[1] = True
+                    bpy.context.object.lock_rotation[2] = True
+                    bpy.context.object.lock_scale[0] = True
+                    bpy.context.object.lock_scale[1] = True
+                    bpy.context.object.lock_scale[2] = True
                 
                 layers = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
                 
