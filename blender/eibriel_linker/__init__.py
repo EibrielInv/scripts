@@ -249,7 +249,8 @@ class eLinkerPanelLinks(bpy.types.Panel):
             col.operator("elinker.gen_cache", icon="MOD_MESHDEFORM")
 
         elif active_obj.dupli_group:
-            col.operator("elinker.import_group", icon="IMPORT")
+            if len(elib_collection) > 0:
+                col.operator("elinker.import_group", icon="IMPORT")
 
         layout.separator()
         col = layout.column(align=0)
@@ -702,6 +703,10 @@ class importGroup(bpy.types.Operator):
         addon_prefs = user_preferences.addons[__name__].preferences
         wm = context.window_manager
         elib_collection = addon_prefs.elibrary_collection
+        if not len(elib_collection) > 0:
+            self.report( {'ERROR'}, "A library is needed" )
+            return {'CANCELLED'}
+        
         elib = elib_collection[ wm.elibrary_collection_index ]
         elibname = elib.name
 
