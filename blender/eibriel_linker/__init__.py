@@ -20,9 +20,9 @@
 
 bl_info = {
     "name": "eLinker",
-    "author": "Eibriel",
-    "version": (0,1),
-    "blender": (2, 72, 0),
+    "author": "Eibriel, Florian Meyer",
+    "version": (0,2),
+    "blender": (2, 74, 0),
     "location": "View3D > Tools > Relations",
     "description": "Link groups with two clicks",
     "warning": "",
