@@ -1,5 +1,8 @@
-Tricycles
-=========
+#Tricycles
+
+![Tricycles](tricycles.jpg "Tricycles")
+
+![Render Test](render_test_01.png "Render Test")
 
 Hi!!
 Trying to understand how Cycles works I've decided to port some code I found
@@ -26,8 +29,7 @@ While the Engine is a Path Tracer, i think currently is not exactly like cycles:
 - http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf
 
 
-TODO
-====
+##TODO
 
 - Add some basic properties to objects to set the Shader
 - Get camera rotation (Only position works now)
