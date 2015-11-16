@@ -7,6 +7,12 @@ then
 
     #mv /svn_tmp/kiribati /svn/kiribati
 
+    #RUN mkdir /svn/kiribati
+
+    chown svn:svn /svn
+    chmod g+w /svn
+    chmod g+s /svn
+
     svnadmin create /svn/kiribati
 
     #password-db = passwd
