@@ -21,9 +21,5 @@ ADD init.sh /init.sh
 
 ENV BAM_VERBOSE=bam
 
-VOLUME /svn
-
-VOLUME /db
-
 WORKDIR /bam
 CMD ["/init.sh"]

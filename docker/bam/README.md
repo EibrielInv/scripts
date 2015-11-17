@@ -1,6 +1,11 @@
 docker build -t bam:latest .
-docker create --link=svn_kiribati:svn_kiribati -l bam_kiribati --name=bam_kiribati -p=5000:5000 bam:latest
+docker create --link=svn_kiribati:svn_kiribati -l bam_kiribati --name=bam_kiribati -p=5000:5000 \
+    -v /svn/bam_svn:/svn/kiribati \
+    -v /svn/bam_db:/db
+    bam:latest
 start bam_kiribati
+
+
 
 bam_cli.py init http://127.0.0.1:5000/kiribati
 
