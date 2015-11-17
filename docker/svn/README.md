@@ -2,7 +2,7 @@ docker build -t svn:latest .
 docker create -l svn_kiribati --name=svn_kiribati -p=3690:3690 \
         -v /svn/kiribati:/svn/kiribati svn:latest
 
-start svn_kiribati
+docker start svn_kiribati
 
 
 
