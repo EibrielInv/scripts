@@ -3,7 +3,8 @@ docker create --link=svn_kiribati:svn_kiribati -l bam_kiribati --name=bam_kiriba
     -v /svn/bam_svn:/svn/kiribati \
     -v /svn/bam_db:/db
     bam:latest
-start bam_kiribati
+
+docker start bam_kiribati
 
 
 

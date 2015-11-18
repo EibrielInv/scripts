@@ -12,11 +12,6 @@ ADD config.py webservice/bam/config.py
 
 RUN pip install -r webservice/requirements.txt
 
-RUN mkdir /db
-RUN python webservice/bam/manage.py db init
-RUN python webservice/bam/manage.py db upgrade
-RUN python webservice/bam/manage.py create_all_tables
-
 ADD init.sh /init.sh
 
 ENV BAM_VERBOSE=bam
