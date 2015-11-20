@@ -1,0 +1,3 @@
+#!/bin/bash
+
+curl -basic -u "user:pass" -d "modulo=dnsDinamico&archivo=dnsDinamico&clienteDeActualizacion=api&op=actualizarHosts&hostNames[]=name.donweb-remoteip.net" "https://administracion.donweb.com/ws/api.php"
