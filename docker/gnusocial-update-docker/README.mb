@@ -1,0 +1,1 @@
+run -it --rm --name gnusocial-update --link=gnusocial-mariadb:gnusocial-mariadb -v /root/eibriel/gnu-social:/usr/src/myapp -w /usr/src/myapp gnusocial-update:latest php scripts/upgrade.php
