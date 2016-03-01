@@ -163,7 +163,7 @@ class eLinkerPanelLibrary(bpy.types.Panel):
         layout = self.layout
 
         col = layout.column()
-        #col.operator("elinker.refresh_libraries", icon="FILE_REFRESH", text="")
+        col.operator("elinker.refresh_libraries", icon="FILE_REFRESH", text="")
         col.template_list("UI_UL_list", "ui_lib_list", addon_prefs, "elibrary_collection", wm, "elibrary_collection_index", rows=len(addon_prefs.elibrary_collection), type="DEFAULT")
 
         colb = col.column()
@@ -706,7 +706,7 @@ class importGroup(bpy.types.Operator):
         if not len(elib_collection) > 0:
             self.report( {'ERROR'}, "A library is needed" )
             return {'CANCELLED'}
-        
+
         elib = elib_collection[ wm.elibrary_collection_index ]
         elibname = elib.name
 
