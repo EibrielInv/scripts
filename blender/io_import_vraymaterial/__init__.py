@@ -52,6 +52,15 @@ class vr_acolor:
     def __repr__(self):
         return "vr_acolor({0}, {1}, {2}, {3})".format(self.r, self.g, self.b, self.a)
 
+class vr_color:
+    def __init__(self, r, g, b):
+        self.r=r
+        self.g=g
+        self.b=b
+
+    def __repr__(self):
+        return "vr_color({0}, {1}, {2})".format(self.r, self.g, self.b)
+
 class IMPORT_OT_vray_material(Operator, AddObjectHelper):
     """V-Ray materials to Blender materials"""
     bl_idname = "import_material.vray"
@@ -75,6 +84,209 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
         self.update_extensions(context)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+    # Import
+    cycles_data = {}
+    internal_data = {}
+    vray_nodes = {}
+
+    def check_val(self, value, types):
+        if type(value) in types:
+            return value
+        else:
+            return None
+
+    def get_connections(self, node_, vray_chain=[]):
+        #print (vray_chain)
+        if node_['_type'] == 'MtlSingleBRDF':
+            #print ("Shader single")
+            #shader_data['output']['mix'] = False
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'output',
+                '_parent_node': None,
+                '_parent_output': None,
+                'color#0': None,
+                'alpha#1': None
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'output',
+                '_parent_node': None,
+                '_parent_output': None,
+                'surface#0': None,
+                'volume#1': None,
+                'displacement#2': None
+            }
+        if node_['_type'] == 'BRDFBump':
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'reroute',
+                '_parent_node': None,
+                '_parent_output': None,
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'bump',
+                '_parent_node': None,
+                '_parent_output': None,
+
+            }
+
+        if node_['_type'] == 'BRDFVRayMtl':
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'extended_material',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': '',
+                'emit#6': self.check_val(node_['self_illumination'], [vr_acolor]),
+                'color#6': self.check_val(node_['diffuse'], [vr_acolor]),
+                'alpha#9': self.check_val(node_['opacity'], [int, float, vr_acolor]),
+                'reflectivity#8': self.check_val(node_['reflect'], [int, float, vr_acolor]),
+            }
+
+        if node_['_type'] == 'TexOutput':
+            #print ("{0}:{1} -> Is using a Texture".format(vray_node, vray_input))
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'reroute',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'reroute',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+            }
+            pass
+
+        if node_['_type'] == 'TexBitmap':
+            #print ("{0}:{1} -> Is using a Bitmap Texture".format(vray_node, vray_input))
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'reroute',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'reroute',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+            }
+            pass
+
+        if node_['_type'] == 'BitmapBuffer':
+            #print ("{0}:{1} -> Bitmap: {2}".format(vray_node, vray_input, node_['file']))
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'texture',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'image_texture',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'image': self.check_val(node_['file'], [str]),
+            }
+            pass
+
+        if node_['_type'] == 'TexLayered':
+            #print ("{0}:{1} -> Is mixing Textures: {2}".format(vray_node, vray_input, node_['textures']))
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'mix_rgb',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'factor#0': 0.5,
+                'color1#1': None,
+                'color2#2': None,
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'mix_rgb',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'factor#0': 0.5,
+                'color1#1': None,
+                'color2#2': None,
+            }
+            pass
+
+        if node_['_type'] == 'TexAColor':
+            #print ("{0}:{1} -> A solid color".format(vray_node, vray_input))
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'rgb',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'color#0': self.check_val(node_['texture'], [vr_acolor]),
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'rgb',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'color#0': self.check_val(node_['texture'], [vr_acolor]),
+            }
+            pass
+
+        if node_['_type'] == 'TexAColorOp':
+            #print ("{0}:{1} -> Is mixing Colors or Textures".format(vray_node, vray_input))
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'mix_rgb',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'factor#0': 0.5,
+                'color1#1': self.check_val(node_['color_a'], [vr_acolor]),
+                'color2#2': self.check_val(node_['color_b'], [vr_acolor]),
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'mix_rgb',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'factor#0': 0.5,
+                'color1#1': self.check_val(node_['color_a'], [vr_acolor]),
+                'color2#2': self.check_val(node_['color_b'], [vr_acolor]),
+            }
+            pass
+
+        if node_['_type'] == 'TexFalloff':
+            #print ("{0}:{1} -> A fallof".format(vray_node, vray_input))
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'geometry',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'layer_weight',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+            }
+            pass
+
+        for prop in node_:
+            if prop[0] == '_':
+                continue
+
+            #if node_['_type'] in ['BRDFVRayMtl', 'BRDFBump']:
+            vray_chain.append(node_['_name'])
+
+            if type(node_[prop]) == list:
+                for nname in node_[prop]:
+                    if nname in self.vray_nodes:
+                        self.get_connections( self.vray_nodes[nname], vray_chain )
+            elif type(node_[prop]) == vr_link:
+                if node_[prop] in self.vray_nodes:
+                    #print ("Connection {0} -> {1}".format(node_['_name'], node_[prop]))
+                    self.get_connections( self.vray_nodes[node_[prop]], vray_chain )
 
     def execute(self, context):
         print ("Importing")
@@ -322,7 +534,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 data=myfile.read()
 
             output_node = None
-            vray_nodes = {}
+            self.vray_nodes = {}
             for node_type in nodes_properties:
                 m = re_nodes[node_type]['_main'].finditer(data)
                 if m:
@@ -340,6 +552,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                                 converted_prop = match_content.group(np)
                                 list_match = re.match(r'List\((?P<content>.+?)\)', converted_prop)
                                 listint_match = re.match(r'ListInt\((?P<content>.+?)\)', converted_prop)
+                                color_match = re.match(r'Color\((?P<content>.+?)\)', converted_prop)
                                 acolor_match = re.match(r'AColor\((?P<content>.+?)\)', converted_prop)
                                 int_match = re.match(r'(?P<content>\d+)$', converted_prop)
                                 float_match = re.match(r'(?P<content>\d+\.\d+)$', converted_prop)
@@ -354,6 +567,13 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                                     for val in vr_listint:
                                         val = int(val)
                                     converted_prop = vr_listint
+                                elif color_match:
+                                    val_color = color_match.group('content')
+                                    val_color = val_color.split(',')
+                                    converted_prop = vr_color(
+                                                        float(val_color[0]),
+                                                        float(val_color[1]),
+                                                        float(val_color[2]))
                                 elif acolor_match:
                                     val_acolor = acolor_match.group('content')
                                     val_acolor = val_acolor.split(',')
@@ -373,53 +593,37 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                                     converted_prop = vr_link(converted_prop)
 
                                 node_data[np] = converted_prop
-                        vray_nodes[ match_node.group('name') ] = node_data
+                        self.vray_nodes[ match_node.group('name') ] = node_data
                         if node_type == 'MtlSingleBRDF':
                             output_node_name = match_node.group('name')
 
-            output_node = vray_nodes[output_node_name]
+            output_node = self.vray_nodes[output_node_name]
 
-            shader_data = {}
+            self.get_connections(output_node)
 
-            def get_connections(node_, parent=None, prop=None):
-                if node_['_type'] == 'MtlSingleBRDF':
-                    print ("Shader single")
-                if node_['_type'] == 'BRDFBump':
-                    print ("Shader with Bump map")
-                if node_['_type'] == 'BRDFVRayMtl':
-                    print ("Self illumination: {0}".format(node_['self_illumination']))
-                    print ("Diffuse: {0}".format(node_['diffuse']))
-                    print ("Opacity: {0}".format(node_['opacity']))
-                    print ("Reflect: {0}".format(node_['reflect']))
-                if node_['_type'] == 'TexOutput':
-                    print ("Is using a Texture")
-                if node_['_type'] == 'TexBitmap':
-                    print ("Is using a Bitmap Texture")
-                if node_['_type'] == 'BitmapBuffer':
-                    print ("Path: {0}".format(node_['file']))
-                if node_['_type'] == 'TexLayered':
-                    print ("Is mixing Textures")
-                    print ("Textures: {0}".format(node_['textures']))
-                if node_['_type'] == 'TexAColor':
-                    print ("A solid color")
-                if node_['_type'] == 'TexAColorOp':
-                    print ("Is mixing Colors or Textures")
-                if node_['_type'] == 'TexFalloff':
-                    print ("A fallof")
-                for prop in node_:
-                    if prop[0] == '_':
-                        continue
+            pprint.pprint (self.internal_data)
 
-                    if type(node_[prop]) == list:
-                        for nname in node_[prop]:
-                            if nname in vray_nodes:
-                                get_connections( vray_nodes[nname], node_['_name'], prop )
-                    elif type(node_[prop]) == vr_link:
-                        if node_[prop] in vray_nodes:
-                            #print ("Connection {0} -> {1}".format(node_['_name'], node_[prop]))
-                            get_connections( vray_nodes[node_[prop]], node_['_name'], prop )
+            # Create Material
+            C = context
+            D = bpy.data
 
-            get_connections(output_node)
+            mat_name = os.path.split(vrsf)[1]
+
+            exist = True
+            try:
+                D.materials[mat_name]
+            except:
+                D.materials.new(name=mat_name)
+
+            mat = D.materials[mat_name]
+            mat.use_nodes = True
+            nodeout = mat.node_tree.nodes['Material Output']
+
+            for node in self.internal_data:
+                nodeName = node
+                nodeoccl = mat.node_tree.nodes.new(type='ShaderNodeBsdfDiffuse')
+                nodeoccl.name = nodeName
+                mat.node_tree.links.new(nodeout.inputs[0], nodeoccl.outputs[0])
 
             #pprint.pprint (vray_nodes[output_node])
 
