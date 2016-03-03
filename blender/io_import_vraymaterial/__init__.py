@@ -37,7 +37,10 @@ from bpy.types import Operator
 from bpy.props import StringProperty
 from bpy.props import CollectionProperty
 
-from bpy_extras.object_utils import AddObjectHelper, object_data_add
+from bpy_extras.object_utils import AddObjectHelper
+from bpy_extras.object_utils import object_data_add
+
+from bpy_extras.image_utils import load_image
 
 class vr_link(str):
     pass
@@ -118,7 +121,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 'volume#1': None,
                 'displacement#2': None
             }
-        if node_['_type'] == 'BRDFBump':
+        elif node_['_type'] == 'BRDFBump':
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
                 '_type': 'reroute',
@@ -132,8 +135,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 '_parent_output': None,
 
             }
-
-        if node_['_type'] == 'BRDFVRayMtl':
+        elif node_['_type'] == 'BRDFVRayMtl':
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
                 '_type': 'extended_material',
@@ -144,8 +146,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 'alpha#9': self.check_val(node_['opacity'], [int, float, vr_acolor]),
                 'reflectivity#8': self.check_val(node_['reflect'], [int, float, vr_acolor]),
             }
-
-        if node_['_type'] == 'TexOutput':
+        elif node_['_type'] == 'TexOutput':
             #print ("{0}:{1} -> Is using a Texture".format(vray_node, vray_input))
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
@@ -159,9 +160,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 '_parent_node': vray_chain[-1],
                 '_parent_output': None,
             }
-            pass
-
-        if node_['_type'] == 'TexBitmap':
+        elif node_['_type'] == 'TexBitmap':
             #print ("{0}:{1} -> Is using a Bitmap Texture".format(vray_node, vray_input))
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
@@ -175,15 +174,14 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 '_parent_node': vray_chain[-1],
                 '_parent_output': None,
             }
-            pass
-
-        if node_['_type'] == 'BitmapBuffer':
+        elif node_['_type'] == 'BitmapBuffer':
             #print ("{0}:{1} -> Bitmap: {2}".format(vray_node, vray_input, node_['file']))
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
-                '_type': 'texture',
+                '_type': 'image_texture',
                 '_parent_node': vray_chain[-1],
                 '_parent_output': None,
+                'image': self.check_val(node_['file'], [str]),
             }
             self.cycles_data[node_['_name']] = {
                 '_name': node_['_name'],
@@ -192,9 +190,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 '_parent_output': None,
                 'image': self.check_val(node_['file'], [str]),
             }
-            pass
-
-        if node_['_type'] == 'TexLayered':
+        elif node_['_type'] == 'TexLayered':
             #print ("{0}:{1} -> Is mixing Textures: {2}".format(vray_node, vray_input, node_['textures']))
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
@@ -214,9 +210,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 'color1#1': None,
                 'color2#2': None,
             }
-            pass
-
-        if node_['_type'] == 'TexAColor':
+        elif node_['_type'] == 'TexAColor':
             #print ("{0}:{1} -> A solid color".format(vray_node, vray_input))
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
@@ -232,9 +226,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 '_parent_output': None,
                 'color#0': self.check_val(node_['texture'], [vr_acolor]),
             }
-            pass
-
-        if node_['_type'] == 'TexAColorOp':
+        elif node_['_type'] == 'TexAColorOp':
             #print ("{0}:{1} -> Is mixing Colors or Textures".format(vray_node, vray_input))
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
@@ -254,10 +246,7 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 'color1#1': self.check_val(node_['color_a'], [vr_acolor]),
                 'color2#2': self.check_val(node_['color_b'], [vr_acolor]),
             }
-            pass
-
-        if node_['_type'] == 'TexFalloff':
-            #print ("{0}:{1} -> A fallof".format(vray_node, vray_input))
+        elif node_['_type'] == 'TexFalloff':
             self.internal_data[node_['_name']] = {
                 '_name': node_['_name'],
                 '_type': 'geometry',
@@ -270,7 +259,21 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
                 '_parent_node': vray_chain[-1],
                 '_parent_output': None,
             }
-            pass
+        elif node_['_type'] == 'UVWGenMayaPlace2dTexture':
+            self.internal_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'geometry',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'uv_map': node_['uv_set_name'],
+            }
+            self.cycles_data[node_['_name']] = {
+                '_name': node_['_name'],
+                '_type': 'uv_map',
+                '_parent_node': vray_chain[-1],
+                '_parent_output': None,
+                'uv_map': node_['uv_set_name'],
+            }
 
         for prop in node_:
             if prop[0] == '_':
@@ -617,13 +620,103 @@ class IMPORT_OT_vray_material(Operator, AddObjectHelper):
 
             mat = D.materials[mat_name]
             mat.use_nodes = True
-            nodeout = mat.node_tree.nodes['Material Output']
+
+            #mat.node_tree.nodes['Material Output']
+            nodeout_internal = None
+            nodeout_cycles = None
+            for node in mat.node_tree.nodes:
+                if node.type == 'OUTPUT':
+                    nodeout_internal = node
+                if node.type == 'OUTPUT_MATERIAL':
+                    nodeout_cycles = node
+
+            if not nodeout_internal:
+                nodeout_internal = mat.node_tree.nodes.new(type='ShaderNodeOutput')
+            if not nodeout_cycles:
+                nodeout_cycles = mat.node_tree.nodes.new(type='ShaderNodeOutputMaterial')
 
             for node in self.internal_data:
-                nodeName = node
-                nodeoccl = mat.node_tree.nodes.new(type='ShaderNodeBsdfDiffuse')
-                nodeoccl.name = nodeName
-                mat.node_tree.links.new(nodeout.inputs[0], nodeoccl.outputs[0])
+                node_type = self.internal_data[node]['_type']
+                #print (node_type)
+                if node_type == 'image_texture':
+
+                    image = load_image(self.internal_data[node]['image'])
+
+                    # look for texture with importsettings
+                    fn_full = os.path.normpath(bpy.path.abspath(image.filepath))
+                    img_texture = None
+                    for texture in bpy.data.textures:
+                        if texture.type == 'IMAGE':
+                            tex_img = texture.image
+                            if (tex_img is not None) and (tex_img.library is None):
+                                fn_tex_full = os.path.normpath(bpy.path.abspath(tex_img.filepath))
+                                if fn_full == fn_tex_full:
+                                    #self.set_texture_options(context, texture)
+                                    img_texture = texture
+                                    break
+
+                    # if no texture is found: create one
+                    if not img_texture:
+                        name_compat = bpy.path.display_name_from_filepath(image.filepath)
+                        texture = bpy.data.textures.new(name=name_compat, type='IMAGE')
+                        texture.image = image
+                        #self.set_texture_options(context, texture)
+
+                    #nodeName = node
+                    nodeoccl = mat.node_tree.nodes.new(type='ShaderNodeTexture')
+                    nodeoccl.texture = img_texture
+                    self.internal_data[node]['_blnode'] = nodeoccl
+
+                    #mat.node_tree.links.new(nodeout_internal.inputs[1], nodeoccl.outputs[0])
+
+                    #nodeoccl = mat.node_tree.nodes.new(type='ShaderNodeTexImage')
+                    #nodeoccl.image = image
+
+                    #nodes = material.node_tree.nodes
+                    #img = next((node.image for node in nodes if node.type == 'TEX_IMAGE'))
+
+                elif node_type == 'extended_material':
+                    nodeName = node
+                    nodeoccl = mat.node_tree.nodes.new(type='ShaderNodeExtendedMaterial')
+                    nodeoccl.name = nodeName
+                    self.internal_data[node]['_blnode'] = nodeoccl
+                    #mat.node_tree.links.new(nodeout_internal.inputs[0], nodeoccl.outputs[0])
+                elif node_type == 'mix_rgb':
+                    nodeName = node
+                    nodeoccl = mat.node_tree.nodes.new(type='ShaderNodeMixRGB')
+                    nodeoccl.name = nodeName
+                    self.internal_data[node]['_blnode'] = nodeoccl
+                    #mat.node_tree.links.new(nodeout_internal.inputs[0], nodeoccl.outputs[0])
+                elif node_type == 'geometry':
+                    nodeName = node
+                    nodeoccl = mat.node_tree.nodes.new(type='ShaderNodeUVMap')
+                    nodeoccl.name = nodeName
+                    self.internal_data[node]['_blnode'] = nodeoccl
+                    #nodeoccl.uv_map = self.internal_data[node]['uv_map']
+                    #mat.node_tree.links.new(nodeout_internal.inputs[0], nodeoccl.outputs[0])
+
+            for node in self.internal_data:
+                if self.internal_data[node]['_type'] == 'output':
+                    out_node = self.internal_data[node]
+
+            def create_links(node):
+                print (node["_parent_node"])
+
+            create_links(out_node)
+
+            #for node in self.internal_data:
+            #if not '_blnode' in self.internal_data[node]:
+            #    continue
+            #blnode = self.internal_data[node]['_blnode']
+            #if self.internal_data[node]['_type'] == 'extended_material':
+            #    mat.node_tree.links.new(nodeout_internal.inputs[0], blnode.outputs[0])
+            #elif self.internal_data[node]['_type'] == 'image_texture':
+            #    mat.node_tree.links.new(nodeout_internal.inputs[0], blnode.outputs[0])
+
+            #if engine in {'BLENDER_RENDER', 'BLENDER_GAME'}:
+            #    img = material.texture_slots[0].texture.image
+            #elif engine == 'CYCLES':
+
 
             #pprint.pprint (vray_nodes[output_node])
 
