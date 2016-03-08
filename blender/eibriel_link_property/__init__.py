@@ -55,28 +55,38 @@ class eLinkedPropertiesPanel(bpy.types.Panel):
                 col = layout.column()
 
                 col.label( text= obj.name )
-                col.prop(active_obj.eibriel_linkproperty, 'npr_ambient_color')
-                col.prop(active_obj.eibriel_linkproperty, 'npr_specular_color')
-                col.prop(active_obj.eibriel_linkproperty, 'npr_main_color')
-                col.prop(active_obj.eibriel_linkproperty, 'npr_border_thick')
-                col.prop(active_obj.eibriel_linkproperty, 'npr_eye_specular_normal')
-                col.prop(active_obj.eibriel_linkproperty, 'npr_eye_specular_size')
-                col.prop(active_obj.eibriel_linkproperty, 'npr_level_light')
-                col.prop(active_obj.eibriel_linkproperty, 'npr_level_shadow')
                 col.prop(active_obj.eibriel_linkproperty, 'npr_rim_intensity')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_rim_color')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_ambient_factor')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_ambient_color')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_level_shadow')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_level_light')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_shadow_color_factor')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_shadow_color')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_light_color')
+
+                col.prop(active_obj.eibriel_linkproperty, 'npr_border_thick')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_eye_specular_normal', text="")
+                col.prop(active_obj.eibriel_linkproperty, 'npr_eye_specular_size')
+                #col.prop(active_obj.eibriel_linkproperty, 'npr_specular_color')
 
 
 class eLinkedProperties(bpy.types.PropertyGroup):
     name = "linked_properties"
+    npr_rim_intensity = FloatProperty(name="Rim intensity", min=0, max=1)
+    npr_rim_color = FloatVectorProperty(name="Rim color", subtype="COLOR", min=0, max=1)
+    npr_ambient_factor = FloatProperty(name="Ambient factor", min=0, max=1)
     npr_ambient_color = FloatVectorProperty(name="Ambient color", subtype="COLOR", min=0, max=1)
-    npr_specular_color = FloatVectorProperty(name="Specular color", subtype="COLOR", min=0, max=1)
-    npr_main_color = FloatVectorProperty(name="Main color", subtype="COLOR", min=0, max=1)
+    npr_level_shadow = IntProperty(name="Shadow level", min=0, max=10)
+    npr_level_light = IntProperty(name="Light level", min=0, max=10)
+    npr_shadow_color_factor = FloatProperty(name="Shadow color factor", min=0, max=1)
+    npr_shadow_color = FloatVectorProperty(name="Shadow color", subtype="COLOR", min=0, max=1)
+    npr_light_color = FloatVectorProperty(name="Light color", subtype="COLOR", min=0, max=1)
+
     npr_border_thick = FloatProperty(name="Border thickness", min=0, max=1)
     npr_eye_specular_normal = FloatVectorProperty(name="Eye specular position", default=(0.0, 0.0, 1.0), subtype="DIRECTION", min=0, max=1)
     npr_eye_specular_size = FloatProperty(name="Eye specular size", min=0, max=1)
-    npr_level_light = IntProperty(name="Light level", min=0, max=10)
-    npr_level_shadow = IntProperty(name="Shadow level", min=0, max=10)
-    npr_rim_intensity = FloatProperty(name="Rim intensity", min=0, max=1)
+    #npr_specular_color = FloatVectorProperty(name="Specular color", subtype="COLOR", min=0, max=1)
 
 
 def register():
