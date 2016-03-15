@@ -70,6 +70,16 @@ class eLinkedPropertiesPanel(bpy.types.Panel):
                 col.prop(active_obj.eibriel_linkproperty, 'npr_eye_specular_size')
                 #col.prop(active_obj.eibriel_linkproperty, 'npr_specular_color')
 
+                col.prop(active_obj.eibriel_linkproperty, 'npr_shadow_smoothness')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_specular_factor')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_ao_factor')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_rim_smoothness')
+
+                col.prop(active_obj.eibriel_linkproperty, 'npr_secondary_light_color')
+                col.prop(active_obj.eibriel_linkproperty, 'npr_secondary_light_factor')
+
+                col.prop(active_obj.eibriel_linkproperty, 'npr_mouth_shadow')
+
 
 class eLinkedProperties(bpy.types.PropertyGroup):
     name = "linked_properties"
@@ -87,6 +97,16 @@ class eLinkedProperties(bpy.types.PropertyGroup):
     npr_eye_specular_normal = FloatVectorProperty(name="Eye specular position", default=(0.0, 0.0, 1.0), subtype="DIRECTION", min=0, max=1)
     npr_eye_specular_size = FloatProperty(name="Eye specular size", min=0, max=1)
     #npr_specular_color = FloatVectorProperty(name="Specular color", subtype="COLOR", min=0, max=1)
+
+    npr_shadow_smoothness = FloatProperty(name="Shadow smoothness", min=-1, max=1)
+    npr_specular_factor = FloatProperty(name="Specular factor", min=0, max=1)
+    npr_ao_factor = FloatProperty(name="Ambient Occlusion factor", default=0.5, min=0, max=1)
+    npr_rim_smoothness = FloatProperty(name="Rim smoothness", min=-1, max=1)
+
+    npr_secondary_light_color = FloatVectorProperty(name="Secondary light color", subtype="COLOR", min=0, max=1)
+    npr_secondary_light_factor = FloatProperty(name="Secondary light factor", min=0)
+
+    npr_mouth_shadow = FloatProperty(name="Mouth shadow", min=0, max=1)
 
 
 def register():
