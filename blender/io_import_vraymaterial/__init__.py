@@ -285,7 +285,7 @@ class importVRMaterial (bpy.types.Operator):
             node_mat = D.materials[mat_name]
             nodeoccl.material = node_mat
 
-            if type(node['diffuse']) == vr_acolor:
+            if 'diffuse' in node and type(node['diffuse']) == vr_acolor:
                 # Color (0)
                 nodeoccl.inputs[0].default_value[0] = node['diffuse'].r
                 nodeoccl.inputs[0].default_value[1] = node['diffuse'].g
@@ -491,7 +491,8 @@ class importVRMaterial (bpy.types.Operator):
             nodeoccl = mat.node_tree.nodes.new(type='ShaderNodeGeometry')
             nodeoccl.name = nodeName
             #self.internal_data[node]['_blnode'] = nodeoccl
-            nodeoccl.uv_layer = node['uv_set_name']
+            if  'uv_set_name' in node:
+                nodeoccl.uv_layer = node['uv_set_name']
 
             nolink = True
             for prev_node in reversed(vray_chain):
