@@ -59,7 +59,7 @@ class eLinkedPropertiesPanel(bpy.types.Panel):
                 col.label( text= "-Despegue-" )
                 col.prop(active_obj.eibriel_linkproperty, 'npr_rim_intensity', text="Despegue intensidad")
                 col.prop(active_obj.eibriel_linkproperty, 'npr_rim_color', text="Despegue color")
-                col.prop(active_obj.eibriel_linkproperty, 'npr_rim_smoothness', text="Despegue tipo offset")
+                #col.prop(active_obj.eibriel_linkproperty, 'npr_rim_smoothness', text="Despegue tipo offset")
                 col.separator()
                 col.label( text= "-Ambiente-" )
                 col.prop(active_obj.eibriel_linkproperty, 'npr_ambient_factor', text="Ambiente factor")
@@ -77,6 +77,12 @@ class eLinkedPropertiesPanel(bpy.types.Panel):
                 col.prop(active_obj.eibriel_linkproperty, 'npr_tertiary_light_color', text="Luz sobre Luz color")
                 col.prop(active_obj.eibriel_linkproperty, 'npr_tertiary_light_offset', text="Luz sobre Luz offset")
                 #col.prop(active_obj.eibriel_linkproperty, 'npr_border_thick', text="Grosor de borde")
+                col.label( text= "-Principal-" )
+                col.prop(active_obj.eibriel_linkproperty, 'npr_main_point_intensity', text="Intensidad principal punto")
+                col.prop(active_obj.eibriel_linkproperty, 'npr_main_sun_intensity', text="Intensidad principal sol")
+                col.prop(active_obj.eibriel_linkproperty, 'npr_main_samples', text="Samples luz principal")
+                col.prop(active_obj.eibriel_linkproperty, 'npr_main_point_samples', text="Samples luz principal punto")
+                col.prop(active_obj.eibriel_linkproperty, 'npr_main_point_size', text="Tamaño luz pincipal punto")
                 col.separator()
                 col.label( text= "-Especular-" )
                 col.prop(active_obj.eibriel_linkproperty, 'npr_specular_color', text="Especular color")
@@ -91,6 +97,8 @@ class eLinkedPropertiesPanel(bpy.types.Panel):
                 col.label( text= "-Ojos-" )
                 col.prop(active_obj.eibriel_linkproperty, 'npr_eye_specular_normal', text="")
                 col.prop(active_obj.eibriel_linkproperty, 'npr_eye_specular_size', text="Brillo especular tamaño")
+                col.label( text= "Iris:" )
+                col.prop(active_obj.eibriel_linkproperty, 'npr_iris_specular_normal', text="")
                 #col.prop(active_obj.eibriel_linkproperty, 'npr_specular_color')
                 col.separator()
                 col.label( text= "-Anteojos-" )
@@ -106,10 +114,9 @@ class eLinkedPropertiesPanel(bpy.types.Panel):
                 col.separator()
                 col.prop(active_obj.eibriel_linkproperty, 'npr_hair_selfillumination', text="Autoiluminación del pelo")
                 col.prop(active_obj.eibriel_linkproperty, 'npr_hair_opacity', text="Opacidad del pelo")
-                col.prop(active_obj.eibriel_linkproperty, 'npr_secondary_size', text="Grosor del pelo")
+                col.prop(active_obj.eibriel_linkproperty, 'npr_hair_thickness', text="Grosor del pelo")
                 col.label( text= "-Luces-" )
                 col.separator()
-                col.prop(active_obj.eibriel_linkproperty, 'npr_main_samples', text="Samples luz principal")
                 col.prop(active_obj.eibriel_linkproperty, 'npr_rim_samples', text="Samples luz despegue")
                 col.prop(active_obj.eibriel_linkproperty, 'npr_secondary_samples', text="Samples luz secundaria")
                 col.prop(active_obj.eibriel_linkproperty, 'npr_secondary_size', text="Tamaño luz secundaria")
@@ -131,6 +138,7 @@ class eLinkedProperties(bpy.types.PropertyGroup):
 
     npr_border_thick = FloatProperty(name="Border thickness", description="Grosor de las lineas de borde (sin uso)", min=0, max=1)
     npr_eye_specular_normal = FloatVectorProperty(name="Eye specular position", description="Posición del brillo especuar en el ojo", default=(0.0, 0.0, 1.0), subtype="DIRECTION", min=0, max=1)
+    npr_iris_specular_normal = FloatVectorProperty(name="Iris specular position", description="Posición del brillo especuar en el iris", default=(0.0, 0.0, 1.0), subtype="DIRECTION", min=0, max=1)
     npr_eye_specular_size = FloatProperty(name="Eye specular size", description="Tamaño del brillo especular del ojo, entre 0 y 1", min=0, max=1)
     #npr_specular_color = FloatVectorProperty(name="Specular color", subtype="COLOR", min=0, max=1)
 
@@ -147,7 +155,7 @@ class eLinkedProperties(bpy.types.PropertyGroup):
     npr_mouth_shadow = FloatProperty(name="Mouth shadow", description="Nivel de oscuridad en el interior de la boca, entre 0 y 1", default=0.5, min=0, max=1)
 
     npr_tertiary_light_color = FloatVectorProperty(name="Tertiary light color", description="Color de la Luz sobre Luz", subtype="COLOR", min=0, max=1)
-    npr_tertiary_light_offset = FloatProperty(name="Tertiary light offset", description="Offset del valor local, entre -5 y 5", default=0, min=-5, max=5)
+    npr_tertiary_light_offset = FloatProperty(name="Tertiary light offset", description="Multiplicador del valor local, entre 0 e infinito", default=0, min=0)
     npr_enable_bump = IntProperty(name="Enable Bump", description="1 activa el Bump, 0 lo desactiva", default=1, min=0, max=1)
 
     npr_lens_refraction_color = FloatVectorProperty(name="Lens refraction color", description="Color de la refracción cristal de los anteojos", subtype="COLOR", min=0, max=1, default=(0.084062, 0.269913, 0.398288))
@@ -158,7 +166,6 @@ class eLinkedProperties(bpy.types.PropertyGroup):
     npr_lens_reflection_color_factor = FloatProperty(name="Lens reflection color factor", description="Nivel de mezcla del color de la reflección del cristal, entre 0 y 1", default=1, min=0, max=1)
     npr_lens_reflection_factor = FloatProperty(name="Lens reflection factor", description="Nivel de reflección", default=1, min=0, max=1)
 
-    npr_main_samples = IntProperty(name="Main light samples", description="Cantidad de samples para la luz principal", default=12, min=0)
     npr_rim_samples = IntProperty(name="Rim light samples", description="Cantidad de samples para la luz de despegue", default=12, min=0)
     npr_secondary_samples = IntProperty(name="Secondary light samples", description="Cantidad de samples para la luz secundaria", default=1, min=0)
     npr_secondary_size = FloatProperty(name="Secondary light size", description="Tamaño la luz secundaria, a mayor tamaño mas suave es la sombra", default=0.1, min=0)
@@ -166,6 +173,13 @@ class eLinkedProperties(bpy.types.PropertyGroup):
     npr_hair_selfillumination = FloatProperty(name="Hair self illumination", description="Autoiluminación de los pelos", default=0.2, min=0, max=1)
     npr_hair_opacity = FloatProperty(name="Hair opacity", description="Opacidad de los pelos", default=1, min=0, max=1)
     npr_hair_thickness = FloatProperty(name="Hair thickness", description="Grosor de los pelos", default=0.5)
+
+    npr_main_samples = IntProperty(name="Main light samples", description="Cantidad de samples para la luz principal", default=12, min=0)
+
+    npr_main_point_intensity = FloatProperty(name="Main point intensity", description="Intensidad de la luz principal punto", default=0, min=0)
+    npr_main_sun_intensity = FloatProperty(name="Main sun intensity", description="Intensidad de la luz principal sol", default=1, min=0, max=1)
+    npr_main_point_samples = IntProperty(name="Main point samples", description="Cantidad de samples para la luz principal punto", default=1, min=0)
+    npr_main_point_size = FloatProperty(name="Main point size", description="Tamaño la luz principal punto, a mayor tamaño mas suave es la sombra", default=0.1, min=0)
 
 
 def register():
