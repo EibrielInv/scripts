@@ -132,11 +132,9 @@ class MovPanelControl(bpy.types.Panel):
         self.layout.operator("t2vc.translucency2vertexcolor")
 
 def register():
-    bpy.types.DATA_PT_vertex_colors.append(button_t2vc)
     bpy.utils.register_module(__name__)
 
 def unregister():
-    bpy.types.DATA_PT_vertex_colors.remove(button_t2vc)
     bpy.utils.unregister_module(__name__)
 
 
