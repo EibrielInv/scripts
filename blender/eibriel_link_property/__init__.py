@@ -99,6 +99,7 @@ class eLinkedPropertiesPanel(bpy.types.Panel):
                 col.prop(active_obj.eibriel_linkproperty, 'npr_eye_specular_size', text="Brillo especular tamaño")
                 col.label( text= "Iris:" )
                 col.prop(active_obj.eibriel_linkproperty, 'npr_iris_specular_normal', text="")
+                col.prop(active_obj.eibriel_linkproperty, 'npr_iris_selfillumination', text="Autoiluminacion iris")
                 #col.prop(active_obj.eibriel_linkproperty, 'npr_specular_color')
                 col.separator()
                 col.label( text= "-Anteojos-" )
@@ -139,6 +140,7 @@ class eLinkedProperties(bpy.types.PropertyGroup):
     npr_border_thick = FloatProperty(name="Border thickness", description="Grosor de las lineas de borde (sin uso)", min=0, max=1)
     npr_eye_specular_normal = FloatVectorProperty(name="Eye specular position", description="Posición del brillo especuar en el ojo", default=(0.0, 0.0, 1.0), subtype="DIRECTION", min=0, max=1)
     npr_iris_specular_normal = FloatVectorProperty(name="Iris specular position", description="Posición del brillo especuar en el iris", default=(0.0, 0.0, 1.0), subtype="DIRECTION", min=0, max=1)
+    npr_iris_selfillumination = FloatProperty(name="Iris selfillumination", description="Autoiluminacion del Iris", min=0, default=1)
     npr_eye_specular_size = FloatProperty(name="Eye specular size", description="Tamaño del brillo especular del ojo, entre 0 y 1", min=0, max=1)
     #npr_specular_color = FloatVectorProperty(name="Specular color", subtype="COLOR", min=0, max=1)
 
