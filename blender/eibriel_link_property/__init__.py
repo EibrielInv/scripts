@@ -56,64 +56,80 @@ class eLinkedAddKeys (bpy.types.Operator):
         scn = context.scene
 
         keys = {}
-        #keys['pose.bones["shoulder_L"]["ORGANIC_IK"]'] = 100
-        keys['npr_rim_intensity'] = obj.eibriel_linkproperty.npr_rim_intensity
-        keys['npr_rim_color'] = obj.eibriel_linkproperty.npr_rim_color
+        keys['pose.bones["light_main"].location'] = 0
+        keys['pose.bones["light_main"].rotation_quaternion'] = 0
+        keys['pose.bones["light_main"].scale'] = 0
+        #
+        keys['pose.bones["light_rim"].location'] = 0
+        keys['pose.bones["light_rim"].rotation_quaternion'] = 0
+        keys['pose.bones["light_rim"].scale'] = 0
+        #
+        keys['pose.bones["light_main omni"].location'] = 0
+        keys['pose.bones["light_main omni"].rotation_quaternion'] = 0
+        keys['pose.bones["light_main omni"].scale'] = 0
+        #
+        keys['pose.bones["light_secondary"].location'] = 0
+        keys['pose.bones["light_secondary"].rotation_quaternion'] = 0
+        keys['pose.bones["light_secondary"].scale'] = 0
 
-        keys['npr_ambient_factor'] = obj.eibriel_linkproperty.npr_ambient_factor
-        keys['npr_ambient_color'] = obj.eibriel_linkproperty.npr_ambient_color
 
-        keys['npr_level_shadow'] = obj.eibriel_linkproperty.npr_level_shadow
-        keys['npr_level_light'] = obj.eibriel_linkproperty.npr_level_light
-        keys['npr_shadow_smoothness'] = obj.eibriel_linkproperty.npr_shadow_smoothness
-        keys['npr_shadow_color_factor'] = obj.eibriel_linkproperty.npr_shadow_color_factor
-        keys['npr_shadow_color'] = obj.eibriel_linkproperty.npr_shadow_color
-        keys['npr_light_color'] = obj.eibriel_linkproperty.npr_light_color
-        keys['npr_secondary_light_color'] = obj.eibriel_linkproperty.npr_secondary_light_color
-        keys['npr_secondary_light_factor'] = obj.eibriel_linkproperty.npr_secondary_light_factor
-        keys['npr_tertiary_light_color'] = obj.eibriel_linkproperty.npr_tertiary_light_color
-        keys['npr_tertiary_light_offset'] = obj.eibriel_linkproperty.npr_tertiary_light_offset
+        keys['eibriel_linkproperty.npr_rim_intensity'] = obj.eibriel_linkproperty.npr_rim_intensity
+        keys['eibriel_linkproperty.npr_rim_color'] = obj.eibriel_linkproperty.npr_rim_color
 
-        keys['npr_main_point_intensity'] = obj.eibriel_linkproperty.npr_main_point_intensity
-        keys['npr_main_sun_intensity'] = obj.eibriel_linkproperty.npr_main_sun_intensity
-        keys['npr_main_samples'] = obj.eibriel_linkproperty.npr_main_samples
-        keys['npr_main_point_samples'] = obj.eibriel_linkproperty.npr_main_point_samples
-        keys['npr_main_point_size'] = obj.eibriel_linkproperty.npr_main_point_size
+        keys['eibriel_linkproperty.npr_ambient_factor'] = obj.eibriel_linkproperty.npr_ambient_factor
+        keys['eibriel_linkproperty.npr_ambient_color'] = obj.eibriel_linkproperty.npr_ambient_color
 
-        keys['npr_specular_color'] = obj.eibriel_linkproperty.npr_specular_color
-        keys['npr_specular_factor'] = obj.eibriel_linkproperty.npr_specular_factor
+        keys['eibriel_linkproperty.npr_level_shadow'] = obj.eibriel_linkproperty.npr_level_shadow
+        keys['eibriel_linkproperty.npr_level_light'] = obj.eibriel_linkproperty.npr_level_light
+        keys['eibriel_linkproperty.npr_shadow_smoothness'] = obj.eibriel_linkproperty.npr_shadow_smoothness
+        keys['eibriel_linkproperty.npr_shadow_color_factor'] = obj.eibriel_linkproperty.npr_shadow_color_factor
+        keys['eibriel_linkproperty.npr_shadow_color'] = obj.eibriel_linkproperty.npr_shadow_color
+        keys['eibriel_linkproperty.npr_light_color'] = obj.eibriel_linkproperty.npr_light_color
+        keys['eibriel_linkproperty.npr_secondary_light_color'] = obj.eibriel_linkproperty.npr_secondary_light_color
+        keys['eibriel_linkproperty.npr_secondary_light_factor'] = obj.eibriel_linkproperty.npr_secondary_light_factor
+        keys['eibriel_linkproperty.npr_tertiary_light_color'] = obj.eibriel_linkproperty.npr_tertiary_light_color
+        keys['eibriel_linkproperty.npr_tertiary_light_offset'] = obj.eibriel_linkproperty.npr_tertiary_light_offset
 
-        keys['npr_sss_factor'] = obj.eibriel_linkproperty.npr_sss_factor
-        keys['npr_ao_factor'] = obj.eibriel_linkproperty.npr_ao_factor
-        keys['npr_mouth_shadow'] = obj.eibriel_linkproperty.npr_mouth_shadow
-        keys['npr_enable_bump'] = obj.eibriel_linkproperty.npr_enable_bump
+        keys['eibriel_linkproperty.npr_main_point_intensity'] = obj.eibriel_linkproperty.npr_main_point_intensity
+        keys['eibriel_linkproperty.npr_main_sun_intensity'] = obj.eibriel_linkproperty.npr_main_sun_intensity
+        keys['eibriel_linkproperty.npr_main_samples'] = obj.eibriel_linkproperty.npr_main_samples
+        keys['eibriel_linkproperty.npr_main_point_samples'] = obj.eibriel_linkproperty.npr_main_point_samples
+        keys['eibriel_linkproperty.npr_main_point_size'] = obj.eibriel_linkproperty.npr_main_point_size
 
-        keys['npr_eye_specular_normal'] = obj.eibriel_linkproperty.npr_eye_specular_normal
-        keys['npr_eye_specular_size'] = obj.eibriel_linkproperty.npr_eye_specular_size
+        keys['eibriel_linkproperty.npr_specular_color'] = obj.eibriel_linkproperty.npr_specular_color
+        keys['eibriel_linkproperty.npr_specular_factor'] = obj.eibriel_linkproperty.npr_specular_factor
 
-        keys['npr_iris_specular_normal'] = obj.eibriel_linkproperty.npr_iris_specular_normal
-        keys['npr_iris_selfillumination'] = obj.eibriel_linkproperty.npr_iris_selfillumination
+        keys['eibriel_linkproperty.npr_sss_factor'] = obj.eibriel_linkproperty.npr_sss_factor
+        keys['eibriel_linkproperty.npr_ao_factor'] = obj.eibriel_linkproperty.npr_ao_factor
+        keys['eibriel_linkproperty.npr_mouth_shadow'] = obj.eibriel_linkproperty.npr_mouth_shadow
+        keys['eibriel_linkproperty.npr_enable_bump'] = obj.eibriel_linkproperty.npr_enable_bump
 
-        keys['npr_lens_refraction_color'] = obj.eibriel_linkproperty.npr_lens_refraction_color
-        keys['npr_lens_refraction_color_factor'] = obj.eibriel_linkproperty.npr_lens_refraction_color_factor
-        keys['npr_lens_refraction_ior'] = obj.eibriel_linkproperty.npr_lens_refraction_ior
+        keys['eibriel_linkproperty.npr_eye_specular_normal'] = obj.eibriel_linkproperty.npr_eye_specular_normal
+        keys['eibriel_linkproperty.npr_eye_specular_size'] = obj.eibriel_linkproperty.npr_eye_specular_size
 
-        keys['npr_lens_reflection_color'] = obj.eibriel_linkproperty.npr_lens_reflection_color
-        keys['npr_lens_reflection_color_factor'] = obj.eibriel_linkproperty.npr_lens_reflection_color_factor
-        keys['npr_lens_reflection_factor'] = obj.eibriel_linkproperty.npr_lens_reflection_factor
+        keys['eibriel_linkproperty.npr_iris_specular_normal'] = obj.eibriel_linkproperty.npr_iris_specular_normal
+        keys['eibriel_linkproperty.npr_iris_selfillumination'] = obj.eibriel_linkproperty.npr_iris_selfillumination
 
-        keys['npr_hair_selfillumination'] = obj.eibriel_linkproperty.npr_hair_selfillumination
-        keys['npr_hair_opacity'] = obj.eibriel_linkproperty.npr_hair_opacity
-        keys['npr_hair_thickness'] = obj.eibriel_linkproperty.npr_hair_thickness
+        keys['eibriel_linkproperty.npr_lens_refraction_color'] = obj.eibriel_linkproperty.npr_lens_refraction_color
+        keys['eibriel_linkproperty.npr_lens_refraction_color_factor'] = obj.eibriel_linkproperty.npr_lens_refraction_color_factor
+        keys['eibriel_linkproperty.npr_lens_refraction_ior'] = obj.eibriel_linkproperty.npr_lens_refraction_ior
 
-        keys['npr_rim_samples'] = obj.eibriel_linkproperty.npr_rim_samples
-        keys['npr_secondary_samples'] = obj.eibriel_linkproperty.npr_secondary_samples
-        keys['npr_secondary_size'] = obj.eibriel_linkproperty.npr_secondary_size
+        keys['eibriel_linkproperty.npr_lens_reflection_color'] = obj.eibriel_linkproperty.npr_lens_reflection_color
+        keys['eibriel_linkproperty.npr_lens_reflection_color_factor'] = obj.eibriel_linkproperty.npr_lens_reflection_color_factor
+        keys['eibriel_linkproperty.npr_lens_reflection_factor'] = obj.eibriel_linkproperty.npr_lens_reflection_factor
+
+        keys['eibriel_linkproperty.npr_hair_selfillumination'] = obj.eibriel_linkproperty.npr_hair_selfillumination
+        keys['eibriel_linkproperty.npr_hair_opacity'] = obj.eibriel_linkproperty.npr_hair_opacity
+        keys['eibriel_linkproperty.npr_hair_thickness'] = obj.eibriel_linkproperty.npr_hair_thickness
+
+        keys['eibriel_linkproperty.npr_rim_samples'] = obj.eibriel_linkproperty.npr_rim_samples
+        keys['eibriel_linkproperty.npr_secondary_samples'] = obj.eibriel_linkproperty.npr_secondary_samples
+        keys['eibriel_linkproperty.npr_secondary_size'] = obj.eibriel_linkproperty.npr_secondary_size
 
         def get_ffc(ind, ai=0):
             ffc = None
             for fc in ofc:
-                if "eibriel_linkproperty.{}".format(ind) == fc.data_path and ai == fc.array_index:
+                if ind == fc.data_path and ai == fc.array_index:
                     ffc = fc
             if ffc == None:
                 ofc.new ( ind, ai )
@@ -123,22 +139,19 @@ class eLinkedAddKeys (bpy.types.Operator):
         for ind, k in keys.items():
             tmpind = ind
             if tmpind[:1] != '[':
-                tmpind = "eibriel_linkproperty.{}".format(tmpind)
+                tmpind = tmpind
             key_data = eval("obj.{}".format(tmpind))
-            print (key_data)
 
             if type(key_data) in [mathutils.Color, mathutils.Vector]:
-                ffc = get_ffc(ind, 0)
-                ffc.keyframe_points.insert(frame=scn.frame_current, value = key_data[0])
-
-                ffc = get_ffc(ind, 1)
-                ffc.keyframe_points.insert(frame=scn.frame_current, value = key_data[1])
-
-                ffc = get_ffc(ind, 2)
-                ffc.keyframe_points.insert(frame=scn.frame_current, value = key_data[2])
+                for ai in range(0,3):
+                    ffc = get_ffc(ind, ai)
+                    ffc.keyframe_points.insert(frame=scn.frame_current, value = key_data[ai])
+            elif type(key_data) in [mathutils.Quaternion]:
+                for ai in range(0,4):
+                    ffc = get_ffc(ind, ai)
+                    ffc.keyframe_points.insert(frame=scn.frame_current, value = key_data[ai])
             else:
                 ffc = get_ffc(ind)
-                #print (len(key_data))
                 ffc.keyframe_points.insert(frame=scn.frame_current, value = key_data)
 
         return {'FINISHED'}
