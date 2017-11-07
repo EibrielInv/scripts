@@ -216,9 +216,13 @@ class ECROWD_place(bpy.types.Operator):
         print (placers)
 
         print ("Load Characters Libraries")
+        character_history = []
         for place_type in placers:
             if place_type in characters_lib_abspath:
                 for cc in characters_lib_abspath[place_type]:
+                    if cc in character_history:
+                        continue
+                    character_history.append(cc)
                     self.load_library(characters_lib_abspath[place_type][cc], cc)
 
         print ("Move to Placers")
@@ -259,16 +263,12 @@ class ECROWD_place(bpy.types.Operator):
 
                 min_frame = None
                 max_frame = None
-                anim_data = []
                 for fcurve in armature.animation_data.action.fcurves:
-                    anim_data.append([])
                     for keyframe_point in fcurve.keyframe_points:
                         if min_frame is None or keyframe_point.co[0] < min_frame:
                             min_frame = keyframe_point.co[0]
                         if max_frame is None or keyframe_point.co[0] > max_frame:
                             max_frame = keyframe_point.co[0]
-                        # Save data
-                        anim_data[-1].append([keyframe_point.co[0], keyframe_point.co[1]])
                 # Single user animation
                 bpy.ops.object.make_single_user(animation=True)
                 # Move animation
@@ -288,11 +288,11 @@ class ECROWD_place(bpy.types.Operator):
                     for fcurve in armature.animation_data.action.fcurves:
                         keyframes_to_insert = []
                         for keyframe_point in fcurve.keyframe_points:
-                            if keyframe_point.co[0] > last_frame:
-                                continue
+                            #if keyframe_point.co[0] > last_frame:
+                            #    continue
                             new_keyframe = keyframe_point.co[0]+((last_frame-first_frame)*loop_n)
-                            if new_keyframe > C.scene.frame_end+1:
-                                continue
+                            #if new_keyframe > C.scene.frame_end+1:
+                            #    continue
                             keyframes_to_insert.append([new_keyframe, keyframe_point.co[1]])
                         for kf in keyframes_to_insert:
                             fcurve.keyframe_points.insert(kf[0], kf[1], options={'REPLACE', 'FAST'})
@@ -308,26 +308,39 @@ class ECROWD_place(bpy.types.Operator):
                         if keyframe_point.co[0] < C.scene.frame_start:
                             if keyframe_first_start is None or keyframe_point.co[0] > keyframe_first_start:
                                 keyframe_first_start = keyframe_point.co[0]
+                                keyframe_point.type = "MOVING_HOLD"
                         if C.scene.frame_end < keyframe_point.co[0]:
                             if keyframe_first_end is None or keyframe_point.co[0] < keyframe_first_end:
                                 keyframe_first_end = keyframe_point.co[0]
+                                keyframe_point.type = "MOVING_HOLD"
 
-                    #keyframes_to_remove = []
                     removing = True
+                    rm_debug = False
                     while removing:
                         removing = False
+                        fcurve.update()
+                        C.scene.update()
                         for keyframe_point in fcurve.keyframe_points:
+                            if rm_debug:
+                                if keyframe_point.type in ["BREAKDOWN", "EXTREME"]:
+                                    continue
                             if keyframe_first_end == keyframe_point.co[0] or keyframe_first_start == keyframe_point.co[0]:
+                                print ("Skip removing", keyframe_first_start, keyframe_first_end, keyframe_point.co[0])
                                 continue
-                            if keyframe_point.co[0] > C.scene.frame_end + 1 or keyframe_point.co[0] < C.scene.frame_start - 1:
+                            if keyframe_point.co[0] > (C.scene.frame_end+1) or keyframe_point.co[0] < (C.scene.frame_start-1):
                                 print ("Removing ", keyframe_point.co[0])
-                                fcurve.keyframe_points.remove(keyframe_point, fast=False)
+                                if rm_debug:
+                                    if keyframe_point.co[0] > (C.scene.frame_end+1):
+                                        keyframe_point.type = "EXTREME"
+                                    if keyframe_point.co[0] < (C.scene.frame_start-1):
+                                        keyframe_point.type = "BREAKDOWN"
+                                else:
+                                    fcurve.keyframe_points.remove(keyframe_point, fast=True)
                                 removing = True
                                 break
 
         #Cleanup
-        for obj in C.scene.objects:
-            obj.select = False
+        self.deselect_all()
         for obj in C.scene.objects:
             if obj.get("ecrowd_placed") is not None and obj.get("ecrowd_placed_duplicated") is None:
                 obj.select = True
