@@ -23,6 +23,7 @@ import atexit
 
 from bpy.app.handlers import persistent
 from bpy.props import StringProperty
+from bpy.types import AddonPreferences
 
 bl_info = {
     "name": "eLocker",
@@ -37,18 +38,23 @@ bl_info = {
     "category": "Eibriel"}
 
 
-def lockunlock(lock, unlock):
-    if False:
-        print("Locking:", lock)
-        print("Unlocking:", unlock)
-    if lock is not None:
-        new_path = "{}.lock".format(lock)
+def get_lockpath(filepath):
+    return "{}.lock".format(filepath)
+
+
+def lockunlock(action):
+    # If is not saved then return
+    if bpy.data.filepath == "":
+        return
+
+    new_path = get_lockpath(bpy.data.filepath)
+
+    if action == "LOCK":
         if not os.path.exists(new_path):
             new_lock = open(new_path, 'w')
             new_lock.write(get_uuid())
             new_lock.close()
-    if unlock is not None:
-        new_path = "{}.lock".format(unlock)
+    elif action == "UNLOCK":
         new_lock = open(new_path, 'r')
         luuid = new_lock.readlines()
         if luuid[0] == get_uuid():
@@ -57,47 +63,21 @@ def lockunlock(lock, unlock):
 
 @persistent
 def load_post_handler(dummy):
-    unlock = None
-    lock = None
-    if bpy.data.filepath != "":
-        lock = bpy.data.filepath
-    if False:
-        print("\npost")
-    lockunlock(lock, unlock)
-    if check_locked():
-        bpy.ops.wm.save_as_mainfile()
-
-
-@persistent
-def load_pre_handler(dummy):
-    unlock = None
-    lock = None
-    if bpy.data.filepath != "":
-        unlock = bpy.data.filepath
-    if False:
-        print("\npre")
-    lockunlock(lock, unlock)
-
-
-def exit_handler(name, adjective):
-    unlock = None
-    lock = None
-    if bpy.data.filepath != "":
-        unlock = bpy.data.filepath
-    if False:
-        print("\nexit")
-    lockunlock(lock, unlock)
+    lockunlock("LOCK")
 
 
 @persistent
 def update_handler(dummy):
-    unlock = None
-    lock = None
-    if bpy.data.filepath != "":
-        lock = bpy.data.filepath
-    if False:
-        print("\nupdate")
-    lockunlock(lock, unlock)
+    lockunlock("LOCK")
+
+
+@persistent
+def load_pre_handler(dummy):
+    lockunlock("UNLOCK")
+
+
+def exit_handler(name, adjective):
+    lockunlock("UNLOCK")
 
 
 def get_uuid():
@@ -109,7 +89,7 @@ def check_locked():
     unlock = bpy.data.filepath
     if unlock == "":
         return False
-    new_path = "{}.lock".format(unlock)
+    new_path = get_lockpath(unlock)
     if not os.path.exists(new_path):
         return False
     new_lock = open(new_path, 'r')
@@ -122,8 +102,6 @@ def lock_label(self, context):
         self.layout.label(text="Locked! Warning, someone else is using this file right now!", icon="ERROR")
         for window in bpy.context.window_manager.windows:
             window.cursor_set("WAIT")
-    # else:
-    #     self.layout.label(text="")
 
 
 def register():
