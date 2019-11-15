@@ -22,8 +22,8 @@ bl_info = {
     "name": "eLinker",
     "author": "Eibriel, Florian Meyer",
     "version": (0,2),
-    "blender": (2, 74, 0),
-    "location": "View3D > Tools > Relations",
+    "blender": (2, 80, 0),
+    "location": "View3D > UI > Relations",
     "description": "Link groups with two clicks",
     "warning": "",
     "wiki_url": "https://github.com/Eibriel/scripts/wiki",
@@ -42,11 +42,11 @@ import mathutils, math, struct
 libitems = []
 
 class eLibraryGroups(bpy.types.PropertyGroup):
-    name = StringProperty(name="Name", default="", options={'HIDDEN', 'SKIP_SAVE'})
+    name: StringProperty(name="Name", default="", options={'HIDDEN', 'SKIP_SAVE'})
 
 
 class eLibraryLibs(bpy.types.PropertyGroup):
-    name = StringProperty(name="Name", default="", options={'HIDDEN', 'SKIP_SAVE'})
+    name: StringProperty(name="Name", default="", options={'HIDDEN', 'SKIP_SAVE'})
 
 
 def refreshLibrariesCallback(prop, context):
@@ -61,8 +61,8 @@ def refreshGroupsCallback(prop, context):
 
 
 def uniquename(prop, context, name):
-    user_preferences = context.user_preferences
-    addon_prefs = user_preferences.addons[__name__].preferences
+    preferences = context.preferences
+    addon_prefs = preferences.addons[__name__].preferences
 
     for el in addon_prefs.elibrary_collection:
         if el.name == name and prop != el:
@@ -96,17 +96,17 @@ positions = [
     ]
 
 class eLibraryProperties(bpy.types.PropertyGroup):
-    folderpath = StringProperty(name="Library folder", default="", subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'}, update=refreshLibrariesCallback)
-    name = StringProperty(name="Name", default="", options={'HIDDEN', 'SKIP_SAVE'}, update=checkNamesCallback)
-    project = StringProperty(name="Project", default="main", options={'HIDDEN', 'SKIP_SAVE'})
-    lodsuffixes = StringProperty(name="LOD suffixes", default="", options={'HIDDEN', 'SKIP_SAVE'})
-    default_position = EnumProperty(items = positions, name="Default position", description="Default position for linked objects")
-    lock_position = BoolProperty(name="Lock position", description="Lock position for linked objects")
+    folderpath: StringProperty(name="Library folder", default="", subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'}, update=refreshLibrariesCallback)
+    name: StringProperty(name="Name", default="", options={'HIDDEN', 'SKIP_SAVE'}, update=checkNamesCallback)
+    project: StringProperty(name="Project", default="main", options={'HIDDEN', 'SKIP_SAVE'})
+    lodsuffixes: StringProperty(name="LOD suffixes", default="", options={'HIDDEN', 'SKIP_SAVE'})
+    default_position: EnumProperty(items = positions, name="Default position", description="Default position for linked objects")
+    lock_position: BoolProperty(name="Lock position", description="Lock position for linked objects")
 
 class eLinkerPreferences(AddonPreferences):
     bl_idname = __name__
 
-    elibrary_collection = CollectionProperty(type=eLibraryProperties, options={'HIDDEN', 'SKIP_SAVE'})
+    elibrary_collection: CollectionProperty(type=eLibraryProperties, options={'HIDDEN', 'SKIP_SAVE'})
 
     def draw(self, context):
         """if len(self.elibrary_collection) == 0:
@@ -122,14 +122,14 @@ class eLinkerPreferences(AddonPreferences):
         col = row.column()
         col.template_list("UI_UL_list", "ui_lib_list_prop", self, "elibrary_collection", context.window_manager, "elibrary_collection_index", rows=5)
         col = row.column(align=True)
-        col.operator("elinker.add_library", icon="ZOOMIN", text="")
+        col.operator("elinker.add_library", icon="ADD", text="")
         if len(self.elibrary_collection) > 0:
             stat = True
         else:
             stat = False
         colb = col.column(align=True)
         colb.enabled = stat
-        colb.operator("elinker.remove_library", icon="ZOOMOUT", text="")
+        colb.operator("elinker.remove_library", icon="REMOVE", text="")
 
         if len(self.elibrary_collection) > 0:
             col = self.elibrary_collection[ context.window_manager.elibrary_collection_index ]
@@ -152,13 +152,13 @@ class eLinkerPanelLibrary(bpy.types.Panel):
     bl_label = "eLinker"
     bl_category = "Relations"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
 
     def draw(self, context):
         active_obj = context.active_object
 
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         wm = context.window_manager
         layout = self.layout
 
@@ -191,13 +191,13 @@ class eLinkerPanelLinks(bpy.types.Panel):
     bl_label = "eLinker Options"
     bl_category = "Relations"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
 
     def draw(self, context):
         active_obj = context.active_object
         wm = context.window_manager
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         elib_collection = addon_prefs.elibrary_collection
 
         if len (elib_collection) < wm.elibrary_collection_index+1:
@@ -248,7 +248,7 @@ class eLinkerPanelLinks(bpy.types.Panel):
             col.prop(context.scene, "elinker_cachepath")
             col.operator("elinker.gen_cache", icon="MOD_MESHDEFORM")
 
-        elif active_obj.dupli_group:
+        elif active_obj.instance_collection:
             if len(elib_collection) > 0:
                 col.operator("elinker.import_group", icon="IMPORT")
 
@@ -264,17 +264,17 @@ class changeGroup (bpy.types.Operator):
     bl_idname = "elinker.change_group"
     bl_label = "Change Group"
 
-    suffix = StringProperty(name="Suffix", description="Group suffix", default="")
+    suffix: StringProperty(name="Suffix", description="Group suffix", default="")
 
     def execute(self,context):
         wm = context.window_manager
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         elib_collection = addon_prefs.elibrary_collection
         elib = elib_collection[ wm.elibrary_collection_index ]
 
         obj = context.active_object
-        egroup = obj.dupli_group
+        egroup = obj.instance_collection
 
         grtemp = ''
 
@@ -319,23 +319,23 @@ class changeGroup (bpy.types.Operator):
             return {'CANCELLED'}
 
         with bpy.data.libraries.load(libfile, link=True) as (data_from, data_to):
-                for grr in data_from.groups:
+                for grr in data_from.collections:
                     if grr == grtemp :
-                        data_to.groups.append(grr)
+                        data_to.collections.append(grr)
         try:
-            bpy.data.groups[grtemp]
+            bpy.data.collections[grtemp]
         except:
             self.report( {'ERROR'}, "Group do not exist: \"%s\"" % grtemp)
             return {'CANCELLED'}
 
-        oldgr = obj.dupli_group
-        obj.dupli_group = bpy.data.groups[ grtemp ]
+        oldgr = obj.instance_collection
+        obj.instance_collection = bpy.data.collections[ grtemp ]
         obj["elinker_group"] = grtemp
 
         """if context.scene.elinker_cleangroup:
             try:
                 oldgr.user_clear()
-                bpy.data.groups.remove(oldgr)
+                bpy.data.collections.remove(oldgr)
             except:
                 pass"""
 
@@ -348,8 +348,8 @@ class savePref (bpy.types.Operator):
     bl_label = "Save Preferences"
 
     def execute(self,context):
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         wm = context.window_manager
         userpath = bpy.utils.resource_path(type="USER")
 
@@ -382,8 +382,8 @@ class loadPref (bpy.types.Operator):
     bl_label = "Load Preferences"
 
     def execute(self,context):
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         wm = context.window_manager
         userpath = bpy.utils.resource_path(type="USER")
         jpath = path.join(userpath, 'elinker.conf')
@@ -438,8 +438,8 @@ class addLibrary (bpy.types.Operator):
     bl_label = "Add Library"
 
     def execute(self,context):
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
 
         elib_collection = addon_prefs.elibrary_collection
         elib_item = elib_collection.add()
@@ -457,8 +457,8 @@ class removeLibrary (bpy.types.Operator):
     bl_label = "Remove Library"
 
     def execute(self,context):
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         wm = context.window_manager
 
         elib_collection = addon_prefs.elibrary_collection
@@ -474,11 +474,11 @@ class refreshLibrary (bpy.types.Operator):
     bl_label = "Refresh Libraries"
 
     def execute(self,context):
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         wm = context.window_manager
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         elib_collection = addon_prefs.elibrary_collection
 
         wm.elib_libs.clear()
@@ -521,8 +521,8 @@ class loadLibraries (bpy.types.Operator):
     #bl_options = {"REGISTER", "UNDO"}
     def execute(self,context):
         scn = context.scene
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         wm = context.window_manager
         elib_collection = addon_prefs.elibrary_collection
 
@@ -543,9 +543,9 @@ class loadLibraries (bpy.types.Operator):
         lpath = elib.folderpath
         with bpy.data.libraries.load(path.join(lpath, lfile)) as (data_from, data_to):
             wm.elib_groups.clear()
-            data_from.groups.sort()
+            data_from.collections.sort()
             persg_set = wm.elib_groups
-            for group in data_from.groups:
+            for group in data_from.collections:
                 if len(suffarray)>0:
                     for suff in suffarray:
                         if group.endswith(suff):
@@ -564,8 +564,8 @@ class linkGroup (bpy.types.Operator):
     bl_label = "Link Group"
     bl_options = {"REGISTER", "UNDO"}
     def execute(self,context):
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         wm = context.window_manager
         elib_collection = addon_prefs.elibrary_collection
 
@@ -582,9 +582,9 @@ class linkGroup (bpy.types.Operator):
 
         appok = False
         with bpy.data.libraries.load( fixpath(libfile), link=True) as (data_from, data_to):
-            for grr in data_from.groups:
+            for grr in data_from.collections:
                 if grr == gr:
-                    data_to.groups.append(grr)
+                    data_to.collections.append(grr)
                     appok = True
 
         if not appok:
@@ -603,11 +603,11 @@ class linkGroup (bpy.types.Operator):
                 tmpname = tmpname[:len(suff)+1]
 
         empty = bpy.data.objects.new(tmpname.lower(), None)
-        context.scene.objects.link( empty )
-        context.scene.objects.active = empty
+        context.context.active_object_layer_collection( empty )
+        context.context.active_object = empty
 
         if elib.default_position == 'cursor':
-            curlocat = context.scene.cursor_location
+            curlocat = context.scene.cursor.location
             empty.location[0] = curlocat[0]
             empty.location[1] = curlocat[1]
             empty.location[2] = curlocat[2]
@@ -621,11 +621,11 @@ class linkGroup (bpy.types.Operator):
         empty.rotation_euler[2] = 0
 
         empty.dupli_type = 'GROUP'
-        dgr = bpy.data.groups.get(gr)
+        dgr = bpy.data.collections.get(gr)
         if not dgr:
             self.report( {'ERROR'}, "Group not found" )
             return {'CANCELLED'}
-        empty.dupli_group = dgr
+        empty.instance_collection = dgr
 
         empty["elinker_type"] = elibname
         empty["elinker_file"] = libfile
@@ -642,7 +642,7 @@ class linkGroup (bpy.types.Operator):
             empty.lock_scale[1] = True
             empty.lock_scale[2] = True
 
-        for ob in empty.dupli_group.objects:
+        for ob in empty.instance_collection.objects:
             if ob.type=="ARMATURE":
                 bpy.ops.object.proxy_make(object=ob.name)
 
@@ -670,7 +670,7 @@ class linkGroup (bpy.types.Operator):
 
                 rig.layers = layers
 
-                rig.show_x_ray = True
+                rig.show_in_front = True
                 rig["elinker_type"] = "%s_rig" % (elibname)
                 rig["elinker_children"] = empty.name
                 empty["elinker_rig"] = rig.name
@@ -685,7 +685,7 @@ class linkGroup (bpy.types.Operator):
                 rig.animation_data.action = act
 
                 #Select Empty again to be able to proxy more rigs
-                context.scene.objects.active = empty
+                context.context.active_object = empty
         return {'FINISHED'}
 
 
@@ -699,8 +699,8 @@ class importGroup(bpy.types.Operator):
             self.report( {'ERROR'}, "The context must be Object Mode" )
             return {'CANCELLED'}
 
-        user_preferences = context.user_preferences
-        addon_prefs = user_preferences.addons[__name__].preferences
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
         wm = context.window_manager
         elib_collection = addon_prefs.elibrary_collection
         if not len(elib_collection) > 0:
@@ -711,7 +711,7 @@ class importGroup(bpy.types.Operator):
         elibname = elib.name
 
         obj = context.active_object
-        egroup = obj.dupli_group
+        egroup = obj.instance_collection
 
         if obj.get('elinker_type'):
             self.report( {'ERROR'}, "The object is already on eLinker" )
@@ -771,11 +771,11 @@ class genCache (bpy.types.Operator):
             self.report( {'ERROR'}, "No active object" )
             return {'CANCELLED'}
 
-        if not gr.dupli_group:
+        if not gr.instance_collection:
             self.report( {'ERROR'}, "The object is not a Dupli Group" )
             return {'CANCELLED'}
 
-        for ob in gr.dupli_group.objects:
+        for ob in gr.instance_collection.objects:
             if ( ob.hide_render == True):
                 continue
             if ( not ob.type in {'MESH'} ):
@@ -850,7 +850,7 @@ class genCache (bpy.types.Operator):
                 count = 0.
                 obinfo = objects[ob.name]
 
-                sc.frame_set(frame)
+                sc.frame_set(subframe=frame)
                 for mm in usemask:
                     mmod = ob.modifiers[ mm['name'] ]
                     mm['show_render'].append(mmod.show_render)
@@ -917,7 +917,7 @@ class genCache (bpy.types.Operator):
             newob['elinker_parent_group'] = gr.get('elinker_group')
             newob['elinker_parent_type'] = gr.get('elinker_type')
 
-            sc.objects.link(newob)
+            sc.objects.active_layer_collection(newob)
             mod = newob.modifiers.new('eLinker Mesh Cache', 'MESH_CACHE')
             mod.cache_format = 'PC2'
             mod.filepath = filepath_temp
@@ -930,8 +930,8 @@ class genCache (bpy.types.Operator):
                 mod.invert_vertex_group = mm['invert_vertex_group']
                 overt = ob.data.vertices
                 for v,k in overt.items():
-                    if overt[v].groups.get(mm['vertex_group']):
-                        newob.data.vertices[k].groups[mm['vertex_group']] = overt[v].groups[mm['vertex_group']]
+                    if overt[v].collections.get(mm['vertex_group']):
+                        newob.data.vertices[k].collections[mm['vertex_group']] = overt[v].collections[mm['vertex_group']]
 
                 if not newob.animation_data:
                     newob.animation_data_create()
@@ -972,7 +972,7 @@ class genCache (bpy.types.Operator):
 
             mod = newob.modifiers.new('eLinker Subsurf', 'SUBSURF')
 
-            context.scene.objects.active = newob
+            context.context.active_object = newob
 
             if len(ob.particle_systems)>0:
                 for ps in ob.particle_systems:
@@ -1113,10 +1113,32 @@ class clearanimkeyshapes (bpy.types.Operator):
 
         return {'FINISHED'}
 
+classes = (
+    eLibraryGroups,
+    eLibraryLibs,
+    eLibraryProperties,
+    eLinkerPreferences,
+    eLinkerPanelLibrary,
+    eLinkerPanelLinks,
+    changeGroup ,
+    savePref ,
+    loadPref ,
+    addLibrary ,
+    removeLibrary ,
+    refreshLibrary ,
+    loadLibraries ,
+    linkGroup ,
+    importGroup,
+    genCache ,
+    cache2shapekeys ,
+    clearanimkeyshapes ,
+    )
+
+
 def register():
-    bpy.utils.register_class(eLinkerPanelLibrary)
-    bpy.utils.register_class(eLinkerPanelLinks)
-    bpy.utils.register_module(__name__)
+
+    for i in classes:
+        bpy.utils.register_class(i)
 
     bpy.types.WindowManager.elibrary_collection_index = IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, update=refreshLibrariesCallback)
 
@@ -1137,9 +1159,9 @@ def register():
 
 
 def unregister():
-    bpy.utils.unregister_class(eLinkerPanelLibrary)
-    bpy.utils.unregister_class(eLinkerPanelLinks)
-    bpy.utils.unregister_module(__name__)
+
+    for i in classes:
+        bpy.utils.unregister_class(i)
 
 if __name__ == "__main__":
     register()
