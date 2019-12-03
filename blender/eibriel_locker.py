@@ -22,8 +22,6 @@ import uuid
 import atexit
 
 from bpy.app.handlers import persistent
-from bpy.props import StringProperty
-from bpy.types import AddonPreferences
 
 bl_info = {
     "name": "eLocker",
