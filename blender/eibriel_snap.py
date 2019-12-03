@@ -18,9 +18,9 @@
 
 bl_info = {
     "name": "eSnap",
-    "author": "Eibriel",
-    "version": (0,1),
-    "blender": (2, 72, 0),
+    "author": "Eibriel, Pullusb",
+    "version": (0,2),
+    "blender": (2, 81, 0),
     "location": "View3D > Snap (Shift+S)",
     "description": "Snap location, rotation and scale",
     "warning": "",
@@ -31,13 +31,13 @@ bl_info = {
 import bpy, mathutils, math
 
 
-class eibrielSnap (bpy.types.Operator):
+class EIBRIEL_OT_Snap(bpy.types.Operator):
     """Snap selected object or bone to active object or bone"""
     bl_idname = "esnap.snap"
     bl_label = "eSnap"
     bl_options = {"REGISTER", "UNDO"}
     
-    invert = bpy.props.BoolProperty(name="Invert", default=False)
+    invert : bpy.props.BoolProperty(name="Invert", default=False)
     
     @classmethod
     def poll(cls, context):
@@ -103,7 +103,7 @@ class eibrielSnap (bpy.types.Operator):
             object_from = object_to
             
             for b in object_from.data.bones:
-                if b.select and b.name != bone_to.name:
+                if b.select_get() and b.name != bone_to.name:
                     bone_from = object_from.pose.bones[ b.name ]
                     break     
         else:
@@ -116,13 +116,13 @@ class eibrielSnap (bpy.types.Operator):
             bone_to = tmp
         
         if bone_to != None:
-            matrix_to = object_to.matrix_world * bone_to.matrix
+            matrix_to = object_to.matrix_world @ bone_to.matrix
         else:
             matrix_to = object_to.matrix_world
         
         
         if bone_from != None:
-            bone_from.matrix = object_from.matrix_world.inverted() * matrix_to
+            bone_from.matrix = object_from.matrix_world.inverted() @ matrix_to
         else:
             object_from.matrix_world = matrix_to
 
@@ -134,23 +134,24 @@ def button_esnap(self, context):
 
 addon_keymaps = []
 
+
 def register():
     #bpy.types.VIEW3D_MT_object_specials.append(button_esnap)
     #bpy.types.VIEW3D_MT_armature_specials.append(button_esnap)
     #bpy.types.VIEW3D_MT_pose_specials.append(button_esnap)
     bpy.types.VIEW3D_MT_snap.append(button_esnap)
-    bpy.utils.register_module(__name__)
+    bpy.utils.register_class(EIBRIEL_OT_Snap)
     
     # handle the keymap
     wm = bpy.context.window_manager
     
     km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
-    kmi = km.keymap_items.new(eibrielSnap.bl_idname, 'S', 'PRESS', ctrl=True, oskey=True)
+    kmi = km.keymap_items.new(EIBRIEL_OT_Snap.bl_idname, 'S', 'PRESS', ctrl=True, oskey=True)
     kmi.properties.invert=False
     addon_keymaps.append((km, kmi))
     
     km = wm.keyconfigs.addon.keymaps.new(name='Pose', space_type='EMPTY')
-    kmi = km.keymap_items.new(eibrielSnap.bl_idname, 'S', 'PRESS', ctrl=True, oskey=True)
+    kmi = km.keymap_items.new(EIBRIEL_OT_Snap.bl_idname, 'S', 'PRESS', ctrl=True, oskey=True)
     kmi.properties.invert=False
     addon_keymaps.append((km, kmi))
     
@@ -160,7 +161,7 @@ def unregister():
     #bpy.types.VIEW3D_MT_armature_specials.remove(button_esnap)
     #bpy.types.VIEW3D_MT_pose_specials.remove(button_esnap)
     bpy.types.VIEW3D_MT_snap.remove(button_esnap)
-    bpy.utils.unregister_module(__name__)
+    bpy.utils.unregister_class(EIBRIEL_OT_Snap)
     
     # handle the keymap
     for km, kmi in addon_keymaps:
