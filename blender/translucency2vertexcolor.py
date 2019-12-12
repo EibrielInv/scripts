@@ -17,6 +17,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
+import bmesh
 import mathutils
 
 bl_info = {
@@ -60,29 +61,23 @@ class eibrielTranslucency (bpy.types.Operator):
 
         return epoll
 
-    def test_ray(self, context, from_, to_):
-        # vect = mathutils.Vector([to_[0] * self.bias, to_[1] * self.bias, to_[2] * self.bias])
-        # ray = context.scene.ray_cast(context.view_layer, from_ + vect, to_)
-
+    def test_ray(self, context, from_, to_, depth=0):
+        if depth >= self.max_depth:
+            return depth
         direction = from_ - to_
         direction = -direction
         distance = direction.length
         vect = mathutils.Vector([direction.normalized()[0] * self.bias, direction.normalized()[1] * self.bias, direction.normalized()[2] * self.bias])
-        D = bpy.data
+        # D = bpy.data
         # D.objects["Empty.001"].location = from_
         # D.objects["Empty.002"].location = from_ + vect
         # D.objects["Empty.003"].location = direction
         ray = context.scene.ray_cast(context.view_layer, from_ + vect, direction.normalized(), distance=distance)
-        if 0:
-            ray = (
-                True,
-                mathutils.Vector((-0.13207609951496124, -0.10863813757896423, 1.3594014644622803)),
-                mathutils.Vector((-0.6964025497436523, -0.6247992515563965, -0.35305720567703247)),
-                76411,
-                bpy.data.objects['Tilia_platyphyllos_04(12.1m).001'],
-                mathutils.Matrix(((0.010000000707805157, 0.0, 0.0, 0.0), (0.0, 0.010000000707805157, 4.371139006309477e-10, 0.0), (0.0, -4.371139006309477e-10, 0.010000000707805157, 0.0), (0.0, 0.0, 0.0, 1.0)))
-            )
-        return ray
+        result, location, normal, index, object, matrix = ray
+        if not result:
+            return depth
+        depth = self.test_ray(context, location, to_, depth + 1)
+        return depth
 
     def test_ray_BVH(self, BVH, context, from_, to_):
         vect = mathutils.Vector([to_[0] * self.bias, to_[1] * self.bias, to_[2] * self.bias])
@@ -121,69 +116,45 @@ class eibrielTranslucency (bpy.types.Operator):
                 self.report({'WARNING'}, "{0} is not of type MESH".format(obj.name))
                 continue
             mesh = obj.data
+            matrix_world = obj.matrix_world
 
             VC = mesh.vertex_colors.active
             if not VC:
                 self.report({'WARNING'}, "{0} don't have an active Vertex Color group".format(obj.name))
                 continue
-            VX = mesh.vertices
-            VP = mesh.polygons
-            # BVH = mathutils.bvhtree.BVHTree.FromObject(obj, context.view_layer.depsgraph)
 
-            if 0:
-                C.window_manager.progress_begin(0, 100)
-                count = 0
-                progress_max = len(VC.data)
-                for d in VC.data:
-                    progress = int(count * (100 / progress_max))
-                    C.window_manager.progress_update(progress)
-                    count += 1
-                    d.color = (0, 1, 0, 1)
-                C.window_manager.progress_end()
-
-                count = 0
-                for p in VP:
-                    for v in p.vertices:
-                        VC.data[count].color = (0, 0, 1, 1)
-                        count += 1
-
-            countt = 0
             pcount = 0
             C.window_manager.progress_begin(0, 100)
-            progress_max = len(VP)
             light_loc = light.location
-            done_vertex = []
-            for p in VP:
-                progress = int(pcount * (100 / progress_max))
-                C.window_manager.progress_update(progress)
+
+            vcolors = {}
+            bm = bmesh.new()
+            bm.from_mesh(mesh)
+            # Verts
+            progress_max = len(bm.verts)
+            vcolor_layer = bm.verts.layers.paint_mask.active
+            # print(vcolor_layer)
+            for v in bm.verts:
                 pcount += 1
-                for v in p.vertices:
-                    # if v in done_vertex:
-                    #     continue
-                    # done_vertex.append(v)
-                    from_ = VX[v].co
-                    mat = obj.matrix_world
-                    from_ = mat @ from_
-                    ray = self.test_ray(C, from_, light_loc)
-                    # result, object, matrix, location, normal = ray
-                    result, location, normal, index, object, matrix = ray
+                C.window_manager.progress_update((pcount / progress_max) * 0.5)
+                if v.index in vcolors:
+                    continue
+                from_ = v.co
+                from_ = matrix_world @ from_
+                depth = self.test_ray(C, from_, light_loc)
+                val = float(depth) / max_depth
+                val = 1. - val
+                vcolors[v.index] = (val, val, val, 1.0)
+            bm.free()
+            C.window_manager.progress_end()
 
-                    count = 0
-                    while result:
-                        # result, object, matrix, location, normal = ray
-                        result, location, normal, index, object, matrix = ray
-                        if not result:
-                            break
-                        # world_location = object.matrix_world @ location
-                        ray = self.test_ray(C, location, light_loc)
-                        count += 1
-                        if count >= max_depth:
-                            break
-
-                    count = max_depth - count
-                    val = float(count) / max_depth
-                    VC.data[countt].color = (val, val, val, 1.0)
-                    countt += 1
+            pcount = 0
+            progress_max = len(mesh.polygons)
+            for poly in mesh.polygons:
+                pcount += 1
+                C.window_manager.progress_update(((pcount / progress_max) * 0.5) + 50)
+                for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
+                    VC.data[loop_index].color = vcolors[mesh.loops[loop_index].vertex_index]
             C.window_manager.progress_end()
 
         return {'FINISHED'}
