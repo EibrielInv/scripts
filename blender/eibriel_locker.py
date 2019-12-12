@@ -31,8 +31,8 @@ bl_info = {
     "location": "Topbar",
     "description": "Lock open blender files",
     "warning": "",
-    "wiki_url": "https://github.com/Eibriel/scripts/wiki",
-    "tracker_url": "https://github.com/Eibriel/scripts/issues",
+    "wiki_url": "https://www.patreon.com/posts/elocker-addon-32057605",
+    "tracker_url": "https://www.patreon.com/posts/32057740",
     "category": "Eibriel"}
 
 
